@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hiruna Dilmith: Minimal with live previews</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FCFCFB;
+    --strong: #101113;
+    --text: #5B5F66;
+    --soft: #8A8E95;
+    --line: #D9DBDE;
+    --chip: #F1F2F3;
+    --ok: #2E9E6B;
+    --raise: #FFFFFF;
+    --dash: #C6C9CE;
+    --sans: "Geist", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, Menlo, monospace;
+  }
+  [data-theme="dark"] {
+    --bg: #0E0F11;
+    --strong: #F2F3F4;
+    --text: #9A9EA6;
+    --soft: #6E737B;
+    --line: #2B2E33;
+    --chip: #1A1C1F;
+    --ok: #4CC38A;
+    --raise: #16181B;
+    --dash: #3A3E45;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15.5px; line-height: 1.65; -webkit-font-smoothing: antialiased; transition: background .3s, color .3s; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--strong); outline-offset: 3px; border-radius: 4px; }
+  [hidden] { display: none !important; }
+  .col { max-width: 720px; margin: 0 auto; padding: 0 24px; }
+  .mono { font-family: var(--mono); font-size: 12.5px; }
+  b, .k { color: var(--strong); font-weight: 500; }
+  a.k { text-decoration: none; }
+  a.k:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* nav */
+  .nav { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(10px); }
+  .nav .col { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 12px; }
+  .nav ul { display: flex; gap: 20px; list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .nav ul a { text-decoration: none; }
+  .nav ul a:hover { color: var(--strong); }
+  .right { display: flex; align-items: center; gap: 14px; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 4px 5px 4px 12px; font-size: 13.5px; text-decoration: none; }
+  .pill:hover { border-color: var(--soft); color: var(--strong); }
+  .pill i { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+  kbd { font-family: var(--mono); font-size: 11px; background: var(--chip); border-radius: 999px; padding: 2px 8px; }
+  .sep { width: 1px; height: 16px; background: var(--line); }
+  .theme { display: grid; place-items: center; width: 26px; height: 26px; }
+  .theme:hover { color: var(--strong); }
+
+  /* intro */
+  .intro { padding: 56px 0 52px; }
+  .who { display: flex; align-items: center; gap: 16px; margin-bottom: 30px; }
+  .avatar { width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 500; font-size: 17px; background: radial-gradient(circle at 30% 25%, #6C7A93, #1B2230 75%); }
+  .who h1 { font-size: 18px; font-weight: 500; color: var(--strong); margin: 0; line-height: 1.3; }
+  .who p { margin: 0; font-family: var(--mono); font-size: 13.5px; }
+  .intro > p { max-width: 580px; margin: 0 0 20px; }
+  .copy { display: inline-grid; place-items: center; width: 22px; height: 22px; vertical-align: -5px; margin-left: 2px; color: var(--soft); }
+  .copy:hover { color: var(--strong); }
+
+  /* section heads */
+  /* page guide lines: two vertical lines at the column edges, full-width rules around each section heading */
+  html { overflow-x: clip; }
+  body::before, body::after { content: ""; position: fixed; top: 0; bottom: 0; width: 1px; z-index: 25; pointer-events: none;
+    background: repeating-linear-gradient(180deg, var(--dash) 0 2px, transparent 2px 7px); }
+  body::before { left: calc(50% - 376px); }
+  body::after { left: calc(50% + 376px); }
+  section.blk::before, .head::after, footer::before { content: ""; position: absolute; left: 50%; width: 100vw; height: 5px; transform: translate(-50%, -2px); pointer-events: none;
+    background:
+      radial-gradient(circle, var(--soft) 1.4px, transparent 1.9px) calc(50% - 376px) 50% / 5px 5px no-repeat,
+      radial-gradient(circle, var(--soft) 1.4px, transparent 1.9px) calc(50% + 376px) 50% / 5px 5px no-repeat,
+      repeating-linear-gradient(90deg, var(--dash) 0 2px, transparent 2px 7px) 0 2px / 100% 1px no-repeat; }
+  section.blk::before, footer::before { top: 0; }
+  .head::after { bottom: 0; }
+  section.blk, .head, footer { position: relative; }
+  section.blk { padding: 0 0 56px; }
+  .head { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; margin-bottom: 26px; flex-wrap: wrap; }
+  h2 { font-size: 17px; font-weight: 500; color: var(--strong); margin: 0; }
+  .tabs { display: flex; gap: 2px; border-radius: 999px; padding: 3px; box-shadow: 0 1px 2px rgba(16,17,19,.06), 0 0 0 1px var(--line); }
+  .tabs button { font-size: 12.5px; padding: 3px 11px; border-radius: 999px; }
+  .tabs button:hover { color: var(--strong); }
+  .tabs button[aria-pressed="true"] { background: var(--chip); color: var(--strong); }
+
+  /* project grid  */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { position: relative; padding: 9px 9px 0; min-width: 0; display: flex; flex-direction: column; }
+  .shot { position: relative; aspect-ratio: 16 / 10.4; border-radius: 10px; overflow: hidden; margin-bottom: 12px; }
+  .win { position: absolute; inset: 10% 7.5% 10%; border-radius: 7px; background: #0C0D0F; color: #C9CCD1; box-shadow: 0 14px 34px -10px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.07); overflow: hidden; font-family: var(--mono); font-size: 9.5px; line-height: 1.5; padding: 11px 13px; }
+  .win.light { background: #FBFBFA; color: #4A4E55; box-shadow: 0 14px 34px -10px rgba(0,0,0,.35), 0 0 0 1px rgba(0,0,0,.05); }
+  .win .cap { display: block; color: #6E737B; margin-bottom: 7px; }
+  .bg-sea   { background: radial-gradient(120% 90% at 20% 0%, #9CC3D6 0%, transparent 55%), radial-gradient(90% 80% at 90% 100%, #1F4C5C 0%, transparent 60%), linear-gradient(160deg, #6FA3B5, #2B5E6E); }
+  .bg-dusk  { background: radial-gradient(90% 80% at 80% 10%, #E9B77A 0%, transparent 55%), radial-gradient(100% 90% at 0% 100%, #2E3A2A 0%, transparent 60%), linear-gradient(170deg, #B98A55, #47503A); }
+  .bg-cloud { background: radial-gradient(80% 70% at 30% 20%, #F4F1EC 0%, transparent 60%), radial-gradient(90% 80% at 100% 90%, #8FA3BD 0%, transparent 60%), linear-gradient(180deg, #C9D3E0, #A3B2C7); }
+  .bg-ember { background: radial-gradient(70% 90% at 100% 50%, #E8642C 0%, transparent 60%), radial-gradient(60% 70% at 0% 100%, #5A1F3A 0%, transparent 60%), #120C0E; }
+  .bg-moss  { background: radial-gradient(90% 80% at 10% 10%, #B9C9A3 0%, transparent 55%), radial-gradient(90% 90% at 100% 100%, #26402F 0%, transparent 60%), linear-gradient(150deg, #7E9A72, #355240); }
+  .bg-plum  { background: radial-gradient(90% 80% at 85% 0%, #C7A9D6 0%, transparent 55%), radial-gradient(90% 90% at 0% 100%, #2A2148 0%, transparent 60%), linear-gradient(160deg, #8B77AE, #3A2F63); }
+
+  .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .card h3 { font-size: 15.5px; font-weight: 600; color: var(--strong); margin: 0; }
+  .top time { font-size: 11.5px; color: var(--strong); white-space: nowrap; }
+  .status { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--strong); margin: 1px 0 7px; }
+  .status svg { color: var(--ok); }
+  .status.wip svg { color: #C98A1B; }
+  .top, .status, .card p, .chips { padding: 0 4px; }
+  .card p { margin: 0 0 10px; font-size: 13.5px; line-height: 1.55; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
+  .chips span { font-size: 11.5px; color: var(--strong); border: 1px solid var(--line); border-radius: 5px; padding: 1px 7px; }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; margin: auto -9px 0; border-top: 1px dashed var(--dash); }
+  .acts a { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 8px; font-size: 13px; text-decoration: none; }
+  .acts a + a { position: relative; }
+  .acts a + a::before { content: ""; position: absolute; left: 0; top: 9px; bottom: 9px; border-left: 1px dashed var(--dash); }
+  .acts a:hover { color: var(--strong); }
+
+  /* live visuals: each loops on an 8 second cycle */
+  .win * { animation-duration: 8s; animation-iteration-count: infinite; animation-timing-function: ease-out; }
+  @keyframes s1 { 0%, 2% { opacity: 0; transform: translateY(3px); } 7%, 90% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+  @keyframes s2 { 0%, 12% { opacity: 0; transform: translateY(3px); } 17%, 90% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+  @keyframes s3 { 0%, 22% { opacity: 0; transform: translateY(3px); } 27%, 90% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+  @keyframes s4 { 0%, 32% { opacity: 0; transform: translateY(3px); } 37%, 90% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+  @keyframes s5 { 0%, 44% { opacity: 0; transform: translateY(3px); } 49%, 90% { opacity: 1; transform: none; } 96%, 100% { opacity: 0; } }
+  @keyframes growx { 0%, 4% { transform: scaleX(0); } 22%, 90% { transform: scaleX(1); } 98%, 100% { transform: scaleX(0); } }
+  @keyframes growy { 0%, 4% { transform: scaleY(0); } 20%, 90% { transform: scaleY(1); } 98%, 100% { transform: scaleY(0); } }
+  @keyframes drawp { 0%, 5% { stroke-dashoffset: 1; } 70%, 92% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 1; } }
+  @keyframes talk { from { transform: scaleY(.2); } to { transform: scaleY(1); } }
+  @keyframes turn-a { 0%, 44% { transform: scaleY(1); opacity: 1; } 50%, 94% { transform: scaleY(.12); opacity: .45; } 100% { transform: scaleY(1); opacity: 1; } }
+  @keyframes turn-b { 0%, 44% { transform: scaleY(.12); opacity: .45; } 50%, 94% { transform: scaleY(1); opacity: 1; } 100% { transform: scaleY(.12); opacity: .45; } }
+
+  .steps span { display: flex; gap: 7px; align-items: center; opacity: 0; }
+  .steps span::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: #7FB2FF; flex: none; }
+  .steps span:last-child::before { background: #4CC38A; }
+  .steps span:nth-child(1) { animation-name: s1; } .steps span:nth-child(2) { animation-name: s2; } .steps span:nth-child(3) { animation-name: s3; } .steps span:nth-child(4) { animation-name: s4; } .steps span:nth-child(5) { animation-name: s5; }
+
+  .hits div { display: grid; grid-template-columns: 1fr 26px; gap: 8px; align-items: center; margin-bottom: 6px; }
+  .hits em { display: block; font-style: normal; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hits u { display: block; height: 3px; border-radius: 2px; background: #C9CDD3; transform-origin: left; animation-name: growx; margin-top: 3px; }
+  .hits div:first-of-type u { background: #2F6FEB; }
+  .hits div:nth-of-type(2) u { animation-delay: .35s; } .hits div:nth-of-type(3) u { animation-delay: .7s; }
+  .hits s { text-decoration: none; text-align: right; color: #8A8E95; }
+
+  .bars { display: flex; align-items: flex-end; gap: 5%; height: 62%; border-bottom: 1px solid #2B2E33; }
+  .bars i { flex: 1; background: #4CC38A; border-radius: 2px 2px 0 0; transform-origin: bottom; animation-name: growy; }
+  .bars i.bad { background: #E5604D; }
+  .verdict { display: block; margin-top: 7px; color: #E5604D; opacity: 0; animation-name: s3; }
+
+  .lane { display: flex; align-items: center; gap: 2.2%; height: 27%; transform-origin: center; }
+  .lane i { flex: 1; height: 100%; border-radius: 2px; background: #B9A3F5; animation: talk .9s ease-in-out infinite alternate; }
+  .lane.b i { background: #F2F3F4; }
+  .lane.a { animation-name: turn-a; } .lane.b { animation-name: turn-b; }
+  .who-l { display: block; color: #6E737B; margin: 2px 0; }
+
+  .diff span { display: block; padding: 1px 6px; border-radius: 3px; margin-bottom: 3px; opacity: 0; animation-name: s1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .diff .del { background: rgba(229,96,77,.16); color: #F0A093; }
+  .diff .add { background: rgba(76,195,138,.16); color: #8FDDB7; animation-name: s2; }
+  .diff .sum { color: #C9CCD1; animation-name: s3; padding-left: 0; margin-top: 7px; }
+  .diff .sum + .sum { animation-name: s4; color: #6E737B; margin-top: 0; }
+
+  .loss svg { width: 100%; height: 66%; display: block; overflow: visible; }
+  .loss path { fill: none; stroke: #C98A1B; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 1; animation-name: drawp; animation-timing-function: linear; vector-effect: non-scaling-stroke; }
+  .loss .axis { stroke: #D9DBDE; stroke-width: 1; stroke-dasharray: none; animation: none; }
+  .loss span { display: block; opacity: 0; animation-name: s5; }
+
+  /* articles */
+  .rows { list-style: none; margin: 0; padding: 0; }
+  .rows a { display: grid; grid-template-columns: 84px minmax(0, 1fr) auto; gap: 18px; align-items: baseline; padding: 13px 0; text-decoration: none; border-bottom: 1px dashed var(--dash); }
+  .rows li:first-child a { border-top: 1px dashed var(--dash); }
+  .rows .t { color: var(--strong); }
+  .rows a:hover .t { text-decoration: underline; text-underline-offset: 3px; }
+
+  /* crop-marked tiles: content and chat sources */
+  .crop { position: relative; padding: 12px 13px; text-decoration: none; display: block; }
+
+  .card, .crop { border: 1px dashed var(--dash); }
+  .card { border-radius: 14px; }
+  .crop { border-radius: 10px; }
+  .crop:hover { border-color: var(--soft); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .tiles .mono { display: block; color: var(--soft); margin-bottom: 4px; }
+  .tiles .t { display: block; color: var(--strong); font-size: 14.5px; line-height: 1.4; margin-bottom: 8px; }
+  .tiles small { font-size: 12.5px; }
+
+  footer { padding: 22px 0 48px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--soft); }
+
+  /* chat */
+  #ask-view { min-height: calc(100vh - 60px); display: flex; flex-direction: column; }
+  #ask-view:not(.started) { justify-content: center; padding-bottom: 14vh; text-align: center; }
+  .hero .avatar { width: 60px; height: 60px; font-size: 19px; margin: 0 auto 20px; }
+  .hero h1 { font-size: 27px; font-weight: 500; letter-spacing: -0.015em; color: var(--strong); margin: 0 0 8px; line-height: 1.25; }
+  .hero p { max-width: 430px; margin: 0 auto 28px; }
+  .chat-top { display: flex; justify-content: flex-end; padding-top: 14px; }
+  .chat-top button { font-size: 13px; border-radius: 999px; padding: 4px 12px; box-shadow: 0 0 0 1px var(--line); }
+  .chat-top button:hover { color: var(--strong); box-shadow: 0 0 0 1px var(--soft); }
+  #thread { flex: 1; padding: 8px 0 20px; }
+  #ask-view:not(.started) #thread, #ask-view:not(.started) .chat-top, .started .hero, .started .sugg { display: none; }
+  .turn { padding: 16px 0; }
+  .turn .q { display: flex; justify-content: flex-end; margin: 0 0 20px; }
+  .turn .q span { background: var(--chip); color: var(--strong); padding: 9px 16px; border-radius: 20px; max-width: 82%; text-align: left; }
+  .reply { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 14px; }
+  .reply .avatar { width: 30px; height: 30px; font-size: 11px; }
+  .trace { list-style: none; margin: 3px 0 12px; padding: 0; font-family: var(--mono); font-size: 12px; color: var(--soft); }
+  .trace li { display: flex; gap: 9px; align-items: center; padding: 1px 0; }
+  .trace li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; border: 1px solid var(--soft); flex: none; }
+  .trace li.done::before { background: var(--ok); border-color: var(--ok); }
+  .ans { margin: 0 0 14px; min-height: 1.65em; color: var(--strong); }
+  .srcs { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .srcs .crop { padding: 9px 12px; }
+  .srcs .mono { display: block; color: var(--soft); font-size: 11.5px; }
+  .srcs .t { display: block; color: var(--strong); font-size: 13.5px; line-height: 1.35; }
+  .started .composer { position: sticky; bottom: 0; background: var(--bg); padding: 12px 0 22px; }
+  .composer form { display: flex; gap: 8px; align-items: center; border-radius: 28px; padding: 7px 7px 7px 22px; background: var(--raise); box-shadow: 0 2px 10px -4px rgba(16,17,19,.14), 0 0 0 1px var(--line); }
+  .composer form:focus-within { box-shadow: 0 2px 10px -4px rgba(16,17,19,.14), 0 0 0 1px var(--soft); }
+  .composer input { flex: 1; min-width: 0; font: inherit; font-size: 16px; color: var(--strong); background: none; border: 0; outline: 0; padding: 9px 0; }
+  .composer input::placeholder { color: var(--soft); }
+  .send { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: var(--strong); color: var(--bg); flex: none; }
+  .send:hover { opacity: .85; }
+  .sugg { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 18px; }
+  .sugg button { font-size: 13.5px; border-radius: 999px; padding: 6px 14px; box-shadow: 0 0 0 1px var(--line); }
+  .sugg button:hover { color: var(--strong); box-shadow: 0 0 0 1px var(--soft); }
+  .note { margin: 14px 0 0; color: var(--soft); text-align: center; font-size: 11.5px; }
+
+  @media (max-width: 800px) {
+    body::before, body::after { display: none; }
+    section.blk::before, .head::after, footer::before { background: repeating-linear-gradient(90deg, var(--dash) 0 2px, transparent 2px 7px) 0 2px / 100% 1px no-repeat; }
+  }
+  @media (max-width: 640px) {
+    .nav ul { gap: 13px; font-size: 13px; }
+    .nav ul li:first-child, .pill span, .sep { display: none; }
+    .grid { grid-template-columns: 1fr; }
+    .tiles { grid-template-columns: 1fr; }
+    .rows a { grid-template-columns: minmax(0, 1fr) auto; }
+    .rows a .mono:first-child { grid-column: 1 / -1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    .win * { opacity: 1 !important; transform: none !important; stroke-dashoffset: 0 !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="col">
+    <ul>
+      <li><a href="#top">Home</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#articles">Articles</a></li>
+      <li><a href="#content">Content</a></li>
+    </ul>
+    <div class="right">
+      <a class="pill" href="#ask"><i></i><span>Ask my agent</span><kbd>⌘K</kbd></a>
+      <span class="sep"></span>
+      <button class="theme" id="theme" aria-label="Switch colour theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="2.6"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="home-view" class="col">
+  <section class="intro" id="top">
+    <div class="who">
+      <div class="avatar" aria-hidden="true">HD</div>
+      <div><h1>Hiruna Dilmith</h1><p>Agents that hold up outside the demo</p></div>
+    </div>
+    <p>I'm an AI engineer focused on agents, retrieval, and the evaluation work that tells you whether either one is getting better.</p>
+    <p>Currently, I'm building <a class="k" href="#p-atlas">Atlas</a>, a research agent that plans, searches and writes briefs where every claim has a citation. I like small prompts, explicit tools, and numbers I can trust before shipping.</p>
+    <p>Before this I worked in backend engineering. You can read my <a class="k" href="#articles">articles</a>, explore my code on <a class="k" href="#">GitHub</a>, reach out via <a class="k" href="#">email</a><button class="copy" id="copy" aria-label="Copy email address"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1 1 0 0 0-1-1H3.5a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h.5"/></svg></button>, or just <a class="k" href="#ask">ask my agent</a>.</p>
+  </section>
+
+  <section class="blk" id="projects">
+    <div class="head">
+      <h2>Projects</h2>
+      <div class="tabs" id="tabs" role="group" aria-label="Filter projects">
+        <button data-c="all" aria-pressed="true">All</button>
+        <button data-c="Agents" aria-pressed="false">Agents</button>
+        <button data-c="Retrieval" aria-pressed="false">Retrieval</button>
+        <button data-c="Evaluation" aria-pressed="false">Evaluation</button>
+        <button data-c="Models" aria-pressed="false">Models</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="blk" id="articles">
+    <div class="head"><h2>Articles</h2></div>
+    <ul class="rows" id="art-list"></ul>
+  </section>
+
+  <section class="blk" id="content">
+    <div class="head"><h2>Content</h2></div>
+    <div class="tiles" id="tiles"></div>
+  </section>
+
+  <footer class="mono">
+    <span>Hiruna Dilmith, 2026</span>
+    <span>Prototype with sample content</span>
+  </footer>
+</main>
+
+<main id="ask-view" class="col" hidden>
+  <div class="hero">
+    <div class="avatar" aria-hidden="true">HD</div>
+    <h1>What would you like to know about my work?</h1>
+    <p>My agent answers as me. It searches my projects, articles and content, and shows you what it read.</p>
+  </div>
+  <div class="chat-top"><button type="button" id="new-chat">New chat</button></div>
+  <div id="thread" aria-live="polite"></div>
+  <div class="composer">
+    <form id="ask-form">
+      <input id="ask-input" type="text" autocomplete="off" placeholder="Ask anything" aria-label="Your question">
+      <button class="send" type="submit" aria-label="Send question"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 13V3.5M3.8 7.5L8 3.2l4.2 4.3"/></svg></button>
+    </form>
+    <div class="sugg" id="sugg"></div>
+    <p class="mono note">Prototype: answers are simulated from the sample content on this site.</p>
+  </div>
+</main>
+
+<script>
+const V = {
+  atlas: `<div class="win"><span class="cap">atlas run 0412</span><div class="steps"><span>plan: 4 sub-questions</span><span>search "solid-state cell cost"</span><span>search "2026 pack prices"</span><span>read 6 sources</span><span>brief written, 12 citations</span></div></div>`,
+  recall: `<div class="win light"><span class="cap">where did I note the pgvector index settings?</span><div class="hits"><div><em>infra/postgres.md, line 48<u></u></em><s>.91</s></div><div><em>journal/2026-03-02.md<u style="width:74%"></u></em><s>.74</s></div><div><em>reading/ann-indexes.md<u style="width:52%"></u></em><s>.52</s></div></div></div>`,
+  evalkit: `<div class="win"><span class="cap">faithfulness, last 9 commits</span><div class="bars">${[82, 84, 83, 88, 90, 89, 91, 92, 61].map((h, i) => `<i class="${i === 8 ? "bad" : ""}" style="height:${h}%;animation-delay:${i * .12}s"></i>`).join("")}</div><span class="verdict">build failed: score fell 31 points</span></div>`,
+  voiceline: `<div class="win"><span class="who-l">caller</span><div class="lane a">${Array.from({ length: 22 }, (_, i) => `<i style="animation-delay:-${(i * 0.37) % 0.9}s;animation-duration:${0.6 + (i % 5) * 0.12}s"></i>`).join("")}</div><span class="who-l" style="margin-top:8%">voiceline</span><div class="lane b">${Array.from({ length: 22 }, (_, i) => `<i style="animation-delay:-${(i * 0.23) % 0.9}s;animation-duration:${0.55 + (i % 4) * 0.15}s"></i>`).join("")}</div></div>`,
+  promptdiff: `<div class="win"><span class="cap">system prompt, v14 to v15</span><div class="diff"><span class="del">- Answer briefly.</span><span class="add">+ Answer in two sentences, then offer detail.</span><span class="sum">137 of 500 replies changed</span><span class="sum">3 kinds of change to review</span></div></div>`,
+  tinytuner: `<div class="win light loss"><span class="cap">training loss</span><svg viewBox="0 0 100 50" preserveAspectRatio="none" aria-hidden="true"><path class="axis" d="M0 49.5H100"/><path pathLength="1" d="M0 4 C8 22 12 30 20 33 S32 38 42 40 S60 44 72 44.5 S90 46 100 46"/></svg><span>adapter ready in 19 min</span></div>`,
+};
+const projects = [
+  { id: "atlas", cat: "Agents", title: "Atlas", date: "Sep 2026", wip: true, bg: "bg-sea", desc: "A research agent that plans, searches and writes briefs where every claim has a citation.", stack: ["Python", "Claude", "LangGraph", "Postgres"], tags: "agent agents agentic planning research tools search" },
+  { id: "recall", cat: "Retrieval", title: "Recall", date: "Jun 2026", bg: "bg-cloud", desc: "Hybrid search over personal notes, with answers that link back to the exact source line.", stack: ["TypeScript", "pgvector", "BM25", "Next.js"], tags: "rag retrieval search embeddings vector notes chunking rerank" },
+  { id: "evalkit", cat: "Evaluation", title: "Evalkit", date: "Nov 2025", bg: "bg-moss", desc: "Runs LLM evals in CI and fails the build when a score drops beyond its noise band.", stack: ["Python", "pytest", "DuckDB"], tags: "eval evals evaluation testing ci metrics quality regression" },
+  { id: "voiceline", cat: "Agents", title: "Voiceline", date: "Aug 2025", bg: "bg-plum", desc: "A realtime voice agent for booking calls that recovers gracefully when the caller interrupts.", stack: ["Node", "WebRTC", "Whisper", "ElevenLabs"], tags: "voice realtime speech audio agent agents phone latency" },
+  { id: "promptdiff", cat: "Evaluation", title: "Promptdiff", date: "Mar 2025", bg: "bg-ember", desc: "Shows what changed in model behaviour when a prompt changes, before it reaches users.", stack: ["Go", "SQLite", "React"], tags: "prompt prompts regression testing diff evals review" },
+  { id: "tinytuner", cat: "Models", title: "Tiny-tuner", date: "Dec 2024", bg: "bg-dusk", desc: "A one-command LoRA fine-tuning pipeline for small open models, with an eval report at the end.", stack: ["PyTorch", "PEFT", "Modal"], tags: "fine-tuning finetune lora training models open source small" },
+];
+const articles = [
+  { id: "agent-loop", title: "What an agent loop actually does", date: "Oct 2026", meta: "9 min", tags: "agent agents loop tools planning" },
+  { id: "chunking", title: "Chunking is a retrieval decision, not preprocessing", date: "Aug 2026", meta: "12 min", tags: "rag retrieval chunking embeddings search" },
+  { id: "evals-first", title: "Write the evals before the prompt", date: "Jun 2026", meta: "7 min", tags: "eval evals evaluation prompt testing" },
+  { id: "tool-design", title: "Designing tools an agent can use well", date: "Mar 2026", meta: "10 min", tags: "agent agents tools design api" },
+  { id: "context", title: "Notes on context engineering", date: "Jan 2026", meta: "8 min", tags: "context prompt prompts memory agents" },
+];
+const content = [
+  { id: "rag-video", kind: "Video", title: "Build a retrieval pipeline in 20 minutes", meta: "YouTube, 21 min", tags: "rag retrieval video tutorial embeddings" },
+  { id: "agent-fail", kind: "Thread", title: "Seven ways agents fail in production", meta: "X, 9 posts", tags: "agent agents failure production" },
+  { id: "ship-talk", kind: "Talk", title: "Shipping LLM features without guessing", meta: "Meetup, 25 min", tags: "evals evaluation shipping talk quality" },
+  { id: "embed-short", kind: "Short", title: "Embeddings explained in 60 seconds", meta: "YouTube, 1 min", tags: "embeddings vector retrieval explain" },
+  { id: "tune-live", kind: "Video", title: "Fine-tuning a small model, live", meta: "YouTube, 48 min", tags: "fine-tuning lora training models video" },
+  { id: "notes", kind: "Newsletter", title: "Field notes on building with LLMs", meta: "Monthly", tags: "newsletter notes llm building" },
+];
+
+const $ = (s) => document.querySelector(s);
+const check = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.3"/><path d="M5.3 8.2l1.9 1.9 3.6-4"/></svg>`;
+const clock = `<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6.3"/><path d="M8 4.6V8l2.2 1.5"/></svg>`;
+const gh = `<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .9a7.1 7.1 0 0 0-2.25 13.84c.36.07.49-.15.49-.34v-1.2c-1.98.43-2.4-.95-2.4-.95-.32-.82-.79-1.04-.79-1.04-.65-.44.05-.43.05-.43.71.05 1.09.73 1.09.73.63 1.09 1.66.77 2.07.59.06-.46.25-.77.45-.95-1.58-.18-3.24-.79-3.24-3.51 0-.78.28-1.41.73-1.91-.07-.18-.32-.9.07-1.88 0 0 .6-.19 1.95.73a6.8 6.8 0 0 1 3.56 0c1.36-.92 1.95-.73 1.95-.73.39.98.14 1.7.07 1.88.46.5.73 1.13.73 1.91 0 2.73-1.66 3.33-3.25 3.5.26.22.48.65.48 1.32v1.95c0 .19.13.41.49.34A7.1 7.1 0 0 0 8 .9z"/></svg>`;
+const arrow = `<svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8l6-6M3.5 2H8v4.5"/></svg>`;
+function renderGrid(cat) {
+  $("#grid").innerHTML = projects.filter(p => cat === "all" || p.cat === cat).map(p => `
+    <article class="card" id="p-${p.id}">
+      <div class="shot ${p.bg}">${V[p.id]}</div>
+      <div class="top"><h3>${p.title}</h3><time>${p.date}</time></div>
+      <div class="status${p.wip ? " wip" : ""}">${p.wip ? clock + "In progress" : check + "Completed"}</div>
+      <p>${p.desc}</p>
+      <div class="chips">${p.stack.map(s => `<span>${s}</span>`).join("")}</div>
+      <div class="acts"><a href="#">Live link ${arrow}</a><a href="#">GitHub ${gh}</a></div>
+    </article>`).join("");
+}
+renderGrid("all");
+$("#tabs").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  $("#tabs").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", x === b));
+  renderGrid(b.dataset.c);
+});
+$("#art-list").innerHTML = articles.map(a => `<li><a href="#"><span class="mono">${a.date}</span><span class="t">${a.title}</span><span class="mono">${a.meta}</span></a></li>`).join("");
+$("#tiles").innerHTML = content.map(c => `<a class="crop" href="#"><span class="mono">${c.kind.toLowerCase()}</span><span class="t">${c.title}</span><small>${c.meta}</small></a>`).join("");
+
+$("#theme").addEventListener("click", () => { const r = document.documentElement; r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark"; });
+$("#copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText("hello@yourdomain.com"); } catch {}
+  $("#copy").setAttribute("aria-label", "Email address copied");
+  $("#copy").style.color = "var(--ok)"; setTimeout(() => { $("#copy").style.color = ""; $("#copy").setAttribute("aria-label", "Copy email address"); }, 1400);
+});
+
+/* views */
+function show(hash) {
+  const ask = hash === "#ask";
+  $("#ask-view").hidden = !ask; $("#home-view").hidden = ask;
+  if (ask) { window.scrollTo(0, 0); $("#ask-input").focus(); return; }
+  if (hash.startsWith("#p-") && !document.getElementById(hash.slice(1))) { $("#tabs button").click(); }
+  const el = hash.length > 1 && document.getElementById(hash.slice(1));
+  if (el) el.scrollIntoView({ block: hash.startsWith("#p-") ? "center" : "start" }); else window.scrollTo(0, 0);
+}
+document.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]'); if (!a) return;
+  e.preventDefault();
+  if (a.getAttribute("href") !== "#") show(a.getAttribute("href"));
+});
+addEventListener("keydown", (e) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); show("#ask"); } });
+
+/* simulated agent */
+const corpus = [
+  ...projects.map(p => ({ type: "project", id: p.id, title: p.title, desc: p.desc, href: "#p-" + p.id, text: (p.title + " " + p.desc + " " + p.stack.join(" ") + " " + p.tags).toLowerCase() })),
+  ...articles.map(a => ({ type: "article", id: a.id, title: a.title, href: "#articles", text: (a.title + " " + a.tags).toLowerCase() })),
+  ...content.map(c => ({ type: c.kind.toLowerCase(), id: c.id, title: c.title, href: "#content", text: (c.title + " " + c.tags).toLowerCase() })),
+];
+const stop = new Set("the a an and or of to in on for with what which who how why have has had you your do does did is are was were about tell me can i it that this any some built build made make work worked written write".split(" "));
+function search(q) {
+  const toks = q.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter(t => t.length > 2 && !stop.has(t));
+  return corpus.map(d => ({ d, s: toks.reduce((n, t) => n + d.text.split(new RegExp("\\b" + t.replace(/s$/, ""))).length - 1, 0) }))
+    .filter(x => x.s > 0).sort((a, b) => b.s - a.s).slice(0, 3).map(x => x.d);
+}
+function answer(q, hits) {
+  const l = q.toLowerCase();
+  if (/contact|email|reach|hire|hiring|available|work with/.test(l)) return "Email is best: hello@yourdomain.com. I'm open to collaborations on agents, retrieval and evaluation work, and I usually reply within a couple of days.";
+  if (/who are|background|yourself|about you|experience|story/.test(l)) return "I'm an AI engineer. I started in backend engineering and moved into applied AI, and most of my work now is on agent loops, retrieval quality and evals. I like systems I can reason about and numbers I can trust before shipping.";
+  if (!hits.length) return "I haven't published anything on that yet. The areas I work in most are agents, retrieval and evaluation, so try asking about one of those.";
+  const p = hits.find(h => h.type === "project"), a = hits.find(h => h.type === "article"), c = hits.find(h => h.type !== "project" && h.type !== "article");
+  let out = p ? `The most relevant thing I've built is ${p.title}. ${p.desc}` : "I haven't shipped a project on exactly that, but I have covered it.";
+  if (a) out += ` I wrote up the thinking in “${a.title}”.`;
+  if (c) out += ` There's also a ${c.type} on it: “${c.title}”.`;
+  return out;
+}
+const wait = (ms) => new Promise(r => setTimeout(r, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : ms));
+let busy = false;
+async function ask(q) {
+  if (busy || !q.trim()) return;
+  busy = true;
+  const hits = search(q);
+  const turn = document.createElement("div"); turn.className = "turn";
+  turn.innerHTML = `<p class="q"><span></span></p><div class="reply"><div class="avatar" aria-hidden="true">HD</div><div><ul class="trace"></ul><p class="ans"></p><div class="srcs"></div></div></div>`;
+  turn.querySelector(".q span").textContent = q;
+  $("#ask-view").classList.add("started");
+  $("#thread").append(turn);
+  const trace = turn.querySelector(".trace");
+  for (const s of [`searched my work, ${hits.length} match${hits.length === 1 ? "" : "es"}`, ...hits.map(h => `read ${h.type}: ${h.title}`), "writing answer"]) {
+    const li = document.createElement("li"); li.textContent = s; trace.append(li);
+    $(".composer").scrollIntoView({ block: "end", behavior: "smooth" });
+    await wait(420); li.classList.add("done");
+  }
+  const out = turn.querySelector(".ans");
+  for (const w of answer(q, hits).split(" ")) { out.textContent += (out.textContent ? " " : "") + w; await wait(26); }
+  turn.querySelector(".srcs").innerHTML = hits.map(h => `<a class="crop" href="${h.href}"><span class="mono">${h.type}</span><span class="t">${h.title}</span></a>`).join("");
+  $(".composer").scrollIntoView({ block: "end", behavior: "smooth" });
+  busy = false;
+}
+$("#new-chat").addEventListener("click", () => { if (busy) return; $("#thread").innerHTML = ""; $("#ask-view").classList.remove("started"); $("#ask-input").focus(); });
+$("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); const i = $("#ask-input"); ask(i.value); i.value = ""; });
+["What have you built with agents?", "How do you approach evals?", "Anything on retrieval?", "How can I reach you?"].forEach(s => {
+  const b = document.createElement("button"); b.type = "button"; b.textContent = s; b.addEventListener("click", () => ask(s)); $("#sugg").append(b);
+});
+</script>
+</body>
+</html>
