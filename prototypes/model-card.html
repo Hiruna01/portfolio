@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hiruna Dilmith: Model Card prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500&family=Geist+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400;6..72,500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F6F7F4;
+    --ink: #15181C;
+    --mute: #676D76;
+    --rule: #BFC4CA;
+    --wash: #ECEEEC;
+    --accent: #3A36DB;
+    --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
+    --sans: "Geist", system-ui, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --label-col: 168px;
+  }
+  [data-theme="dark"] {
+    --paper: #101317;
+    --ink: #E8EAED;
+    --mute: #8C939C;
+    --rule: #3A4048;
+    --wash: #181C22;
+    --accent: #9A97FF;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 72px; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    transition: background .3s, color .3s;
+  }
+  a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+  a:hover { text-decoration-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  .sheet { max-width: 904px; margin: 0 auto; padding: 0 28px; }
+  .mono { font-family: var(--mono); font-size: 12.5px; color: var(--mute); letter-spacing: 0; }
+
+  /* top bar */
+  .bar {
+    position: sticky; top: 0; z-index: 10;
+    background: color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter: blur(10px);
+  }
+  .bar-in { display: flex; align-items: center; justify-content: space-between; height: 60px; gap: 16px; }
+  .slug { font-family: var(--mono); font-size: 13px; text-decoration: none; white-space: nowrap; }
+  .slug i { font-style: normal; color: var(--mute); }
+  nav { display: flex; align-items: center; gap: 22px; font-size: 14px; }
+  nav a { text-decoration: none; color: var(--mute); }
+  nav a:hover { color: var(--ink); }
+  .ask-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid var(--rule); border-radius: 999px;
+    padding: 5px 6px 5px 13px; font-size: 14px; color: var(--ink) !important;
+  }
+  .ask-btn:hover { border-color: var(--accent); }
+  .ask-btn .live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  kbd {
+    font-family: var(--mono); font-size: 11px; color: var(--mute);
+    background: var(--wash); border-radius: 999px; padding: 2px 8px;
+  }
+  .theme { width: 28px; height: 28px; display: grid; place-items: center; color: var(--mute); border-radius: 50%; }
+  .theme:hover { color: var(--ink); }
+
+  /* field rows: the whole page is a label / value sheet */
+  .row {
+    position: relative;
+    display: grid; grid-template-columns: var(--label-col) minmax(0, 1fr); column-gap: 36px;
+    padding: 60px 0;
+  }
+  .row::before {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: repeating-linear-gradient(90deg, var(--rule) 0 2px, transparent 2px 7px);
+    transform-origin: left; animation: draw 1.1s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .row:nth-of-type(2)::before { animation-delay: .1s; }
+  .row:nth-of-type(3)::before { animation-delay: .2s; }
+  .row:nth-of-type(4)::before { animation-delay: .3s; }
+  .row:nth-of-type(5)::before { animation-delay: .4s; }
+  @keyframes draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .field { padding-top: 9px; }
+  .field .mono { display: block; }
+  h2 { font-family: var(--serif); font-weight: 400; font-size: 34px; line-height: 1.1; letter-spacing: -0.015em; margin: 0 0 28px; }
+  .value { max-width: 640px; }
+  .value > p { margin: 0 0 16px; }
+
+  /* card header */
+  .card { position: relative; padding: 76px 0 68px; }
+  .card h1 {
+    font-family: var(--serif); font-weight: 400;
+    font-size: clamp(48px, 8.4vw, 88px); line-height: .98; letter-spacing: -0.03em;
+    margin: 18px 0 26px;
+  }
+  .card .lede { font-family: var(--serif); font-size: clamp(20px, 2.5vw, 25px); line-height: 1.4; max-width: 30em; margin: 0 0 40px; }
+  .spec { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; column-gap: 56px; row-gap: 14px; margin: 0; }
+  .spec dt { font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+  .spec dd { margin: 2px 0 0; font-size: 14.5px; }
+  .spec .open::before { content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 8px; vertical-align: 2px; }
+
+  /* projects */
+  .proj { border-bottom: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); }
+  .proj:first-of-type { border-top: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); }
+  .proj summary {
+    list-style: none; cursor: pointer;
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 24px; align-items: start;
+    padding: 20px 0;
+  }
+  .proj summary::-webkit-details-marker { display: none; }
+  .proj h3 { font-family: var(--serif); font-weight: 500; font-size: 23px; line-height: 1.2; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .proj summary p { margin: 0 0 8px; color: var(--mute); font-size: 15px; }
+  .proj summary:hover h3 { color: var(--accent); }
+  .side { display: flex; align-items: center; gap: 14px; padding-top: 5px; }
+  .plus { position: relative; width: 11px; height: 11px; }
+  .plus::before, .plus::after { content: ""; position: absolute; background: var(--ink); transition: transform .25s; }
+  .plus::before { left: 0; right: 0; top: 5px; height: 1px; }
+  .plus::after { top: 0; bottom: 0; left: 5px; width: 1px; }
+  .proj[open] .plus::after { transform: scaleY(0); }
+  .study { padding: 4px 0 28px; }
+  .study p { margin: 0 0 20px; font-size: 15px; }
+  table { border-collapse: collapse; width: 100%; max-width: 420px; margin: 0 0 20px; font-size: 14px; }
+  caption { text-align: left; font-family: var(--mono); font-size: 12.5px; color: var(--mute); padding-bottom: 8px; }
+  td { padding: 7px 0; border-top: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); }
+  td:last-child { text-align: right; font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+  .links { display: flex; gap: 20px; font-size: 14px; }
+
+  /* article + content lists */
+  .list { list-style: none; margin: 0; padding: 0; }
+  .list li { border-bottom: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); }
+  .list li:first-child { border-top: 1px solid color-mix(in srgb, var(--rule) 55%, transparent); }
+  .list a { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; column-gap: 20px; align-items: baseline; padding: 15px 0; text-decoration: none; }
+  .list a:hover .t { color: var(--accent); }
+  .list .t { font-size: 16.5px; }
+  .list .mono:last-child { text-align: right; }
+
+  .contact { display: flex; flex-wrap: wrap; gap: 10px 26px; margin-top: 28px; font-size: 15px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px 40px; margin-top: 32px; }
+  .cols h4 { font-family: var(--mono); font-weight: 400; font-size: 12.5px; color: var(--mute); margin: 0 0 8px; }
+  .cols ul { margin: 0; padding: 0; list-style: none; font-size: 15px; }
+  .cols li { padding: 3px 0; }
+  footer { padding: 32px 0 56px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  /* ask view */
+  #ask-view { min-height: calc(100vh - 60px); display: flex; flex-direction: column; }
+  .ask-head { padding: 64px 0 8px; max-width: 640px; }
+  .ask-head h1 { font-family: var(--serif); font-weight: 400; font-size: clamp(40px, 6vw, 60px); line-height: 1; letter-spacing: -0.025em; margin: 0 0 16px; }
+  .ask-head p { color: var(--mute); margin: 0; max-width: 34em; }
+  #thread { flex: 1; max-width: 640px; padding: 36px 0 24px; }
+  .q { font-family: var(--serif); font-size: 24px; line-height: 1.3; margin: 28px 0 14px; }
+  .trace { font-family: var(--mono); font-size: 12.5px; color: var(--mute); margin: 0 0 16px; padding: 0; list-style: none; }
+  .trace li { display: flex; gap: 10px; padding: 2px 0; }
+  .trace li::before { content: "○"; color: var(--rule); }
+  .trace li.done::before { content: "●"; color: var(--accent); }
+  .trace b { font-weight: 400; color: var(--ink); }
+  .a { margin: 0 0 16px; min-height: 1.6em; }
+  .srcs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .src {
+    display: inline-flex; gap: 8px; align-items: baseline; text-decoration: none;
+    border: 1px solid var(--rule); border-radius: 6px; padding: 6px 11px; font-size: 13.5px;
+  }
+  .src:hover { border-color: var(--accent); }
+  .composer { position: sticky; bottom: 0; background: var(--paper); padding: 12px 0 28px; max-width: 640px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .chip { border: 1px solid var(--rule); border-radius: 999px; padding: 5px 13px; font-size: 13.5px; color: var(--mute); }
+  .chip:hover { color: var(--ink); border-color: var(--accent); }
+  .composer form { display: flex; gap: 10px; border-bottom: 1px solid var(--ink); padding-bottom: 8px; }
+  .composer input { flex: 1; min-width: 0; font: inherit; font-family: var(--serif); font-size: 21px; color: var(--ink); background: none; border: 0; outline: 0; padding: 4px 0; }
+  .composer input::placeholder { color: var(--mute); }
+  .send { font-size: 14px; color: var(--accent); padding: 4px 6px; }
+  .note { margin: 10px 0 0; }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 1fr; padding: 44px 0; }
+    .field { padding: 0 0 10px; }
+    nav a.sec { display: none; }
+    .spec { grid-template-columns: 1fr 1fr; column-gap: 32px; }
+    .list a { grid-template-columns: 1fr auto; }
+    .list a .mono:first-child { grid-column: 1 / -1; }
+    .cols { grid-template-columns: 1fr; }
+    .card { padding: 48px 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header class="bar">
+  <div class="sheet bar-in">
+    <a class="slug" href="#top"><i>models /</i> hiruna-dilmith</a>
+    <nav aria-label="Sections">
+      <a class="sec" href="#projects">Projects</a>
+      <a class="sec" href="#articles">Articles</a>
+      <a class="sec" href="#content">Content</a>
+      <a class="sec" href="#about">About</a>
+      <a class="ask-btn" href="#ask"><span class="live"></span>Ask me <kbd>⌘K</kbd></a>
+      <button class="theme" id="theme" aria-label="Switch colour theme">
+        <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="home-view" class="sheet">
+  <section class="card" id="top">
+    <span class="mono">Model card, version 2026.11</span>
+    <h1>Hiruna Dilmith</h1>
+    <p class="lede">AI engineer. I build agents and retrieval systems that hold up outside the demo, and I write about how they work.</p>
+    <dl class="spec">
+      <div><dt>focus</dt><dd>Agents, retrieval, evaluation</dd></div>
+      <div><dt>status</dt><dd class="open">Open to collaborations</dd></div>
+      <div><dt>updated</dt><dd>November 2026</dd></div>
+    </dl>
+  </section>
+
+  <section class="row" id="projects">
+    <div class="field"><span class="mono">evaluations</span></div>
+    <div class="value">
+      <h2>Projects</h2>
+      <div id="proj-list"></div>
+    </div>
+  </section>
+
+  <section class="row" id="articles">
+    <div class="field"><span class="mono">publications</span></div>
+    <div class="value">
+      <h2>Articles</h2>
+      <ul class="list" id="art-list"></ul>
+    </div>
+  </section>
+
+  <section class="row" id="content">
+    <div class="field"><span class="mono">outputs</span></div>
+    <div class="value">
+      <h2>Content</h2>
+      <ul class="list" id="con-list"></ul>
+    </div>
+  </section>
+
+  <section class="row" id="about">
+    <div class="field"><span class="mono">training data</span></div>
+    <div class="value">
+      <h2>About me</h2>
+      <p>I started in backend engineering and moved to applied AI when language models became good enough to build products on. Most of my time now goes into agent loops, retrieval quality, and the evaluation work that tells you whether either one is getting better.</p>
+      <p>I care about systems you can reason about: small prompts, explicit tools, and numbers you can trust before you ship.</p>
+      <div class="cols">
+        <div>
+          <h4>intended use</h4>
+          <ul><li>Designing and shipping agentic features</li><li>Fixing retrieval that returns the wrong thing</li><li>Setting up evals a team will keep running</li></ul>
+        </div>
+        <div>
+          <h4>limitations</h4>
+          <ul><li>Will ask for an eval set before a prompt</li><li>Prefers boring infrastructure</li><li>Slow to reply on weekends</li></ul>
+        </div>
+      </div>
+      <div class="contact">
+        <a href="#">hello@yourdomain.com</a>
+        <a href="#">GitHub</a>
+        <a href="#">LinkedIn</a>
+        <a href="#">X</a>
+        <a href="#ask">Ask the agent instead</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="mono">
+    <span>hiruna-dilmith, version 2026.11</span>
+    <span>Prototype with sample content</span>
+  </footer>
+</main>
+
+<main id="ask-view" class="sheet" hidden>
+  <div class="ask-head">
+    <span class="mono">inference</span>
+    <h1>Ask me anything</h1>
+    <p>An agent that answers as me. It searches my projects, articles and content, and shows you what it read.</p>
+  </div>
+  <div id="thread" aria-live="polite"></div>
+  <div class="composer">
+    <div class="chips" id="chips"></div>
+    <form id="ask-form">
+      <input id="ask-input" type="text" autocomplete="off" placeholder="What have you built with agents?" aria-label="Your question">
+      <button class="send" type="submit">Ask</button>
+    </form>
+    <p class="mono note">Prototype: answers are simulated from the sample content on this page.</p>
+  </div>
+</main>
+
+<script>
+const projects = [
+  { id: "atlas", title: "Atlas", year: "2026", desc: "A research agent that plans, searches and writes cited briefs.", stack: ["Python", "Claude", "LangGraph", "Postgres"],
+    body: "Atlas breaks a question into sub-questions, runs searches in parallel, and refuses to write a claim it cannot cite. The hard part was stopping it from over-searching, which I solved with a budget the planner has to spend deliberately.",
+    evals: [["Cited-claim accuracy", "94.1%"], ["Median time to brief", "71 s"], ["Tool calls per task", "11.3"]], tags: "agent agents agentic planning research tools search" },
+  { id: "recall", title: "Recall", year: "2026", desc: "Hybrid retrieval over personal notes, with answers that link back to the source line.", stack: ["TypeScript", "pgvector", "BM25", "Next.js"],
+    body: "Recall combines keyword and vector search, then reranks. Chunk boundaries follow the structure of the note instead of a fixed token count, which did more for quality than any model swap.",
+    evals: [["Recall@5", "0.91"], ["Answer faithfulness", "0.96"], ["p95 latency", "420 ms"]], tags: "rag retrieval search embeddings vector notes chunking rerank" },
+  { id: "evalkit", title: "Evalkit", year: "2025", desc: "A small harness for running LLM evals in CI and tracking them over time.", stack: ["Python", "pytest", "DuckDB"],
+    body: "Evalkit treats an eval like a test: it lives next to the code, runs on every pull request, and fails the build when a score drops beyond its noise band.",
+    evals: [["Teams using it", "6"], ["Evals run per week", "3,200"], ["Regressions caught pre-merge", "41"]], tags: "eval evals evaluation testing ci metrics quality regression" },
+  { id: "voiceline", title: "Voiceline", year: "2025", desc: "A realtime voice agent for booking calls, built to recover gracefully from interruptions.", stack: ["Node", "WebRTC", "Whisper", "ElevenLabs"],
+    body: "Most voice agents fall apart when the caller talks over them. Voiceline keeps a running plan of the conversation so it can drop a sentence midway and pick the thread back up.",
+    evals: [["Task completion", "88%"], ["Median response gap", "540 ms"], ["Handled interruptions", "93%"]], tags: "voice realtime speech audio agent phone latency" },
+  { id: "promptdiff", title: "Promptdiff", year: "2025", desc: "Shows what changed in model behaviour when a prompt changes, before it reaches users.", stack: ["Go", "SQLite", "React"],
+    body: "Promptdiff replays a saved set of real inputs against the old and new prompt and groups the differences by kind, so a reviewer reads ten clusters instead of five hundred outputs.",
+    evals: [["Review time per change", "-68%"], ["Replay set size", "500"], ["False alarms", "4%"]], tags: "prompt prompts regression testing diff evals review" },
+  { id: "tinytuner", title: "Tiny-tuner", year: "2024", desc: "A one-command LoRA fine-tuning pipeline for small open models.", stack: ["PyTorch", "PEFT", "Modal"],
+    body: "Tiny-tuner takes a JSONL file and returns a served adapter with an eval report. I built it to find out when a small tuned model beats a large prompted one. More often than I expected.",
+    evals: [["Cost versus hosted baseline", "-83%"], ["Classification F1", "0.93"], ["Time to adapter", "19 min"]], tags: "fine-tuning finetune lora training models open source small" },
+];
+const articles = [
+  { id: "agent-loop", title: "What an agent loop actually does", date: "Oct 2026", meta: "9 min", tags: "agent agents loop tools planning" },
+  { id: "chunking", title: "Chunking is a retrieval decision, not preprocessing", date: "Aug 2026", meta: "12 min", tags: "rag retrieval chunking embeddings search" },
+  { id: "evals-first", title: "Write the evals before the prompt", date: "Jun 2026", meta: "7 min", tags: "eval evals evaluation prompt testing" },
+  { id: "tool-design", title: "Designing tools an agent can use well", date: "Mar 2026", meta: "10 min", tags: "agent agents tools design api" },
+  { id: "context", title: "Notes on context engineering", date: "Jan 2026", meta: "8 min", tags: "context prompt prompts memory agents" },
+];
+const content = [
+  { id: "rag-video", kind: "Video", title: "Build a retrieval pipeline in 20 minutes", meta: "YouTube", tags: "rag retrieval video tutorial embeddings" },
+  { id: "agent-fail", kind: "Thread", title: "Seven ways agents fail in production", meta: "X", tags: "agent agents failure production" },
+  { id: "ship-talk", kind: "Talk", title: "Shipping LLM features without guessing", meta: "Meetup", tags: "evals evaluation shipping talk quality" },
+  { id: "embed-short", kind: "Short", title: "Embeddings explained in 60 seconds", meta: "YouTube", tags: "embeddings vector retrieval explain" },
+  { id: "tune-live", kind: "Video", title: "Fine-tuning a small model, live", meta: "YouTube", tags: "fine-tuning lora training models video" },
+];
+
+const $ = (s) => document.querySelector(s);
+$("#proj-list").innerHTML = projects.map(p => `
+  <details class="proj" id="p-${p.id}">
+    <summary>
+      <div><h3>${p.title}</h3><p>${p.desc}</p><span class="mono">${p.stack.join("  /  ")}</span></div>
+      <div class="side"><span class="mono">${p.year}</span><span class="plus" aria-hidden="true"></span></div>
+    </summary>
+    <div class="study">
+      <p>${p.body}</p>
+      <table><caption>results</caption>${p.evals.map(e => `<tr><td>${e[0]}</td><td>${e[1]}</td></tr>`).join("")}</table>
+      <div class="links"><a href="#">Read the case study</a><a href="#">Source on GitHub</a></div>
+    </div>
+  </details>`).join("");
+$("#art-list").innerHTML = articles.map(a => `<li><a href="#" id="a-${a.id}"><span class="mono">${a.date}</span><span class="t">${a.title}</span><span class="mono">${a.meta}</span></a></li>`).join("");
+$("#con-list").innerHTML = content.map(c => `<li><a href="#" id="c-${c.id}"><span class="mono">${c.kind.toLowerCase()}</span><span class="t">${c.title}</span><span class="mono">${c.meta}</span></a></li>`).join("");
+
+/* theme */
+$("#theme").addEventListener("click", () => {
+  const r = document.documentElement;
+  r.dataset.theme = r.dataset.theme === "dark" ? "light" : "dark";
+});
+
+/* views */
+function show(hash) {
+  const ask = hash === "#ask";
+  $("#ask-view").hidden = !ask;
+  $("#home-view").hidden = ask;
+  if (ask) { window.scrollTo(0, 0); $("#ask-input").focus(); }
+  else { const el = hash.length > 1 && document.getElementById(hash.slice(1)); if (el) el.scrollIntoView(); else window.scrollTo(0, 0); }
+}
+document.addEventListener("click", (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a || a.getAttribute("href") === "#") { if (a) e.preventDefault(); return; }
+  e.preventDefault();
+  const h = a.getAttribute("href");
+  show(h);
+  if (h.startsWith("#p-")) document.getElementById(h.slice(1)).open = true;
+});
+addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); show("#ask"); }
+});
+
+/* simulated agent */
+const corpus = [
+  ...projects.map(p => ({ type: "project", id: p.id, title: p.title, desc: p.desc, href: "#p-" + p.id, text: (p.title + " " + p.desc + " " + p.stack.join(" ") + " " + p.tags).toLowerCase() })),
+  ...articles.map(a => ({ type: "article", id: a.id, title: a.title, href: "#articles", text: (a.title + " " + a.tags).toLowerCase() })),
+  ...content.map(c => ({ type: c.kind.toLowerCase(), id: c.id, title: c.title, href: "#content", text: (c.title + " " + c.tags).toLowerCase() })),
+];
+const stop = new Set("the a an and or of to in on for with what which who how why have has had you your do does did is are was were about tell me can i it that this any some built build made make work worked written write".split(" "));
+function search(q) {
+  const toks = q.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter(t => t.length > 2 && !stop.has(t));
+  return corpus.map(d => ({ d, s: toks.reduce((n, t) => n + (d.text.split(new RegExp("\\b" + t.replace(/s$/, ""))).length - 1), 0) }))
+    .filter(x => x.s > 0).sort((a, b) => b.s - a.s || (a.d.type === "project" ? -1 : 1)).slice(0, 3).map(x => x.d);
+}
+function answer(q, hits) {
+  const l = q.toLowerCase();
+  if (/contact|email|reach|hire|hiring|available|work with/.test(l))
+    return "The best way to reach me is email, at hello@yourdomain.com. I'm open to collaborations on agents, retrieval and evaluation work, and I usually reply within a couple of days.";
+  if (/who are|background|yourself|about you|experience|story/.test(l))
+    return "I'm an AI engineer. I started in backend engineering and moved into applied AI, and most of my work now is on agent loops, retrieval quality and evals. I like systems you can reason about and numbers you can trust before shipping.";
+  if (!hits.length)
+    return "I haven't published anything on that yet. The areas I work in most are agents, retrieval and evaluation, so try asking about one of those.";
+  const p = hits.find(h => h.type === "project"), a = hits.find(h => h.type === "article"), c = hits.find(h => h.type !== "project" && h.type !== "article");
+  let out = p ? `The most relevant thing I've built is ${p.title}. ${p.desc}` : "I haven't shipped a project on exactly that, but I have covered it.";
+  if (a) out += ` I wrote up the thinking in “${a.title}”.`;
+  if (c) out += ` There's also a ${c.type} on it: “${c.title}”.`;
+  return out;
+}
+const wait = (ms) => new Promise(r => setTimeout(r, matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : ms));
+let busy = false;
+async function ask(q) {
+  if (busy || !q.trim()) return;
+  busy = true;
+  const t = $("#thread");
+  const hits = search(q);
+  const block = document.createElement("div");
+  block.innerHTML = `<p class="q"></p><ul class="trace"></ul><p class="a"></p><div class="srcs"></div>`;
+  block.querySelector(".q").textContent = q;
+  t.append(block);
+  const trace = block.querySelector(".trace");
+  const steps = [`search_portfolio <b>"${q.replace(/[<>&]/g, "")}"</b>, ${hits.length} match${hits.length === 1 ? "" : "es"}`,
+    ...hits.map(h => `read <b>${h.type}/${h.id}</b>`), "compose answer"];
+  for (const s of steps) {
+    const li = document.createElement("li"); li.innerHTML = `<span>${s}</span>`; trace.append(li);
+    block.scrollIntoView({ block: "end", behavior: "smooth" });
+    await wait(420); li.classList.add("done");
+  }
+  const out = block.querySelector(".a");
+  for (const w of answer(q, hits).split(" ")) { out.textContent += (out.textContent ? " " : "") + w; await wait(26); }
+  block.querySelector(".srcs").innerHTML = hits.map(h => `<a class="src" href="${h.href}"><span class="mono">${h.type}</span>${h.title}</a>`).join("");
+  $(".composer").scrollIntoView({ block: "end", behavior: "smooth" });
+  busy = false;
+}
+$("#ask-form").addEventListener("submit", (e) => { e.preventDefault(); const i = $("#ask-input"); ask(i.value); i.value = ""; });
+["What have you built with agents?", "How do you approach evals?", "Anything on retrieval?", "How can I reach you?"].forEach(s => {
+  const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = s;
+  b.addEventListener("click", () => ask(s)); $("#chips").append(b);
+});
+</script>
+</body>
+</html>
