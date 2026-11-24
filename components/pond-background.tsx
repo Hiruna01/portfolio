@@ -9,11 +9,7 @@ function inkColour() {
   return getComputedStyle(document.documentElement).getPropertyValue("--koi").trim() || "#1a42e2";
 }
 
-// Full strength at the sides of the window, nearly gone behind the 720px reading column, so text
-// always sits on a clean page. On windows narrower than the column the whole pond stays faint.
-const FADE =
-  "linear-gradient(to right, black, black calc(50% - 560px), rgb(0 0 0 / 0.07) calc(50% - 370px), rgb(0 0 0 / 0.07) calc(50% + 370px), black calc(50% + 560px), black)";
-
+// The fade over the reading column is the .pond class in globals.css.
 // The dithered koi pond behind every public page (koi-pond, WebGL2). It lives in the root layout,
 // so the same pond keeps swimming as the visitor moves between pages. It sits under everything and
 // ignores the pointer: the library only reads the pointer's position from the window, so the fish
@@ -47,7 +43,7 @@ export function PondBackground() {
 
   if (hidden) return null;
   return (
-    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10" style={{ maskImage: FADE, WebkitMaskImage: FADE }}>
+    <div aria-hidden="true" className="pond pointer-events-none fixed inset-0 -z-10">
       <canvas ref={canvasRef} className="block size-full" />
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { ArrowUp, Square } from "lucide-react";
 import { useImperativeHandle, useLayoutEffect, useRef, type FormEvent, type ReactNode, type Ref } from "react";
-import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupTextarea } from "./input-group";
+import { InputGroup, InputGroupButton, InputGroupTextarea } from "./input-group";
 
 const MAX_HEIGHT = 168; // about six lines
 
@@ -17,16 +17,16 @@ type Props = {
   placeholder: string;
   /** Gives the parent the text field, so it can move focus there. */
   inputRef?: Ref<HTMLTextAreaElement | null>;
-  /** Extra controls shown before the text, at the start of the bar. */
+  /** Extra controls at the start of the footer, before the keyboard hint (new chat). */
   actions?: ReactNode;
-  /** Controls shown after the text, before the send button (the microphone). */
+  /** Controls shown before the send button (the microphone). */
   controls?: ReactNode;
 };
 
 /**
- * The chat composer, built on Input Group after the shadcn.io Prompt Input pattern: one rounded bar
- * holding a textarea that grows with its text, and one submit button that sends, or stops the reply while one is streaming.
- * Enter sends and Shift+Enter starts a new line.
+ * The chat composer, built on Input Group: a rounded card with a textarea that grows with its text,
+ * and a footer row holding a quiet keyboard hint and one submit button that sends, or stops the reply
+ * while one is streaming. Enter sends, Shift+Enter starts a new line and Escape clears the field.
  */
 export function PromptInput({ value, onChange, onSend, onStop, busy, disabled, placeholder, inputRef, actions, controls }: Props) {
   const canSend = !disabled && value.trim().length > 0;
@@ -53,11 +53,6 @@ export function PromptInput({ value, onChange, onSend, onStop, busy, disabled, p
   return (
     <form onSubmit={handleSubmit}>
       <InputGroup>
-        {actions && (
-          <InputGroupAddon align="inline-start" className="pb-[9px] pl-[9px]">
-            {actions}
-          </InputGroupAddon>
-        )}
         <InputGroupTextarea
           ref={fieldRef}
           rows={1}
@@ -67,32 +62,41 @@ export function PromptInput({ value, onChange, onSend, onStop, busy, disabled, p
           disabled={disabled}
           aria-label="Your question"
           placeholder={placeholder}
-          className={`min-w-0 py-[17px] pr-2 ${actions ? "pl-2" : "pl-6"}`}
+          className="px-5 pb-1 pt-[18px]"
           onChange={(event) => onChange(event.target.value)}
           onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
+            if (event.key === "Escape" && value) {
+              event.preventDefault();
+              onChange("");
+            } else if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && event.keyCode !== 229) {
               event.preventDefault();
               if (!busy) event.currentTarget.form?.requestSubmit();
             }
           }}
         />
-        <InputGroupAddon align="inline-end" className="gap-1 pb-[9px] pr-[9px]">
-          {controls}
-          <InputGroupButton
-            type="submit"
-            variant="default"
-            size="icon-sm"
-            pill
-            aria-label={busy ? "Stop the answer" : "Send question"}
-            disabled={!busy && !canSend}
-          >
-            {busy ? (
-              <Square className="size-3" fill="currentColor" strokeWidth={0} aria-hidden="true" />
-            ) : (
-              <ArrowUp className="size-[18px]" strokeWidth={2} aria-hidden="true" />
-            )}
-          </InputGroupButton>
-        </InputGroupAddon>
+        <div className="flex items-center gap-1 py-2.5 pl-3 pr-2.5">
+          {actions}
+          <p className="hidden select-none pl-2 font-mono text-[11.5px] text-soft sm:block" aria-hidden="true">
+            esc clear <span className="px-1 opacity-60">·</span> ↵ ask
+          </p>
+          <div className="ml-auto flex items-center gap-1">
+            {controls}
+            <InputGroupButton
+              type="submit"
+              variant="default"
+              size="icon-sm"
+              pill
+              aria-label={busy ? "Stop the answer" : "Send question"}
+              disabled={!busy && !canSend}
+            >
+              {busy ? (
+                <Square className="size-3" fill="currentColor" strokeWidth={0} aria-hidden="true" />
+              ) : (
+                <ArrowUp className="size-[17px]" strokeWidth={2} aria-hidden="true" />
+              )}
+            </InputGroupButton>
+          </div>
+        </div>
       </InputGroup>
     </form>
   );

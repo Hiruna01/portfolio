@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ChevronRight, Compass, Mail, Plus, Sparkles } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { ChatEvent, Item, UiBlock } from "@/lib/types";
@@ -32,9 +32,6 @@ const BROWSE = [
 const STORAGE_KEY = "chat-turns";
 
 type Props = { name: string; suggestions: string[]; enabled: boolean };
-
-// Icons for the suggested questions, used in order and repeated if there are more questions than icons.
-const SUGGESTION_ICONS = [Sparkles, Compass, BookOpen, Mail];
 
 export function Chat({ name, suggestions, enabled }: Props) {
   const [turns, setTurns] = useState<Turn[]>([]);
@@ -70,6 +67,17 @@ export function Chat({ name, suggestions, enabled }: Props) {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(turns.filter((t) => !t.pending)));
     } catch {}
   }, [turns, restored]);
+
+  // The pond shows in full behind the empty page, and the middle fades back once the first question
+  // is asked, so answers sit on a clean page. The fade itself is the .pond rule in globals.css.
+  useEffect(() => {
+    const root = document.documentElement;
+    if (restored && !started) root.dataset.pond = "open";
+    else delete root.dataset.pond;
+    return () => {
+      delete root.dataset.pond;
+    };
+  }, [restored, started]);
 
   useEffect(() => {
     if (started) endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
@@ -166,8 +174,8 @@ export function Chat({ name, suggestions, enabled }: Props) {
       controls={<MicButton value={input} onText={setInput} disabled={!enabled || busy} />}
       actions={
         started && (
-          <InputGroupButton pill size="icon-sm" onClick={reset} aria-label="New chat" title="New chat">
-            <Plus className="size-5" strokeWidth={1.5} aria-hidden="true" />
+          <InputGroupButton pill size="icon-sm" onClick={reset} aria-label="New chat" title="New chat" className="text-soft hover:text-strong">
+            <Plus className="size-[18px]" strokeWidth={1.6} aria-hidden="true" />
           </InputGroupButton>
         )
       }
@@ -188,37 +196,30 @@ export function Chat({ name, suggestions, enabled }: Props) {
   if (!started) {
     return (
       <main className="mx-auto flex min-h-[calc(100dvh-60px)] max-w-[720px] flex-col px-6">
-        <div className="my-auto pb-[6vh] pt-8 text-center">
-          <h1 className="rise mb-3 text-balance text-[32px] font-medium leading-[1.1] tracking-[-0.03em] text-strong sm:text-[42px]" style={order(1)}>
-            What would you like to know about my work?
+        <div className="my-auto pb-[8vh] pt-8 text-center">
+          <h1 className="rise mb-9 text-[44px] font-medium leading-none tracking-[-0.045em] text-strong sm:text-[60px]" style={order(1)}>
+            Ask {name.split(" ")[0]}.
           </h1>
-          <p className="rise mx-auto mb-8 max-w-[460px] text-[16.5px]" style={order(2)}>
-            I&apos;m {name.split(" ")[0]}&apos;s agent. Ask about the projects, articles and talks on this site.
-          </p>
-          <div className="rise relative z-10" style={order(3)}>
+          <div className="rise relative z-10 mx-auto max-w-[580px]" style={order(2)}>
             {composer}
           </div>
           {enabled && suggestions.length > 0 && (
-            <ul className="rise mx-3 mt-4" style={order(4)}>
-              {suggestions.map((suggestion, i) => {
-                const Icon = SUGGESTION_ICONS[i % SUGGESTION_ICONS.length];
-                return (
-                  <li key={suggestion}>
-                    <button
-                      type="button"
-                      onClick={() => ask(suggestion)}
-                      className="flex w-full cursor-pointer items-center gap-3 rounded-full px-4 py-[11px] text-left text-[15px] text-strong transition-colors hover:bg-[color-mix(in_srgb,var(--accent)_11%,transparent)]"
-                    >
-                      <Icon className="size-[17px] shrink-0" strokeWidth={1.5} aria-hidden="true" />
-                      {suggestion}
-                    </button>
-                  </li>
-                );
-              })}
+            <ul className="rise mx-auto mt-5 flex max-w-[580px] flex-wrap justify-center gap-2" style={order(3)}>
+              {suggestions.map((suggestion) => (
+                <li key={suggestion}>
+                  <button
+                    type="button"
+                    onClick={() => ask(suggestion)}
+                    className="cursor-pointer rounded-full border border-line bg-raise/80 px-3.5 py-[7px] text-[13.5px] leading-none text-body backdrop-blur-sm transition-colors hover:border-[color-mix(in_srgb,var(--accent)_45%,var(--line))] hover:text-strong"
+                  >
+                    {suggestion}
+                  </button>
+                </li>
+              ))}
             </ul>
           )}
         </div>
-        <div className="rise pb-6" style={order(5)}>
+        <div className="rise pb-6" style={order(4)}>
           {browse}
         </div>
       </main>

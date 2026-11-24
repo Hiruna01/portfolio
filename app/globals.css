@@ -57,7 +57,7 @@ body {
   line-height: 1.65;
   transition: background-color 0.3s, color 0.3s;
 }
-/* Theme switch: the new theme is revealed as a growing circle (components/ui/animated-theme-toggler.tsx). */
+/* Theme switch: the new theme is revealed as a growing circle (switchTheme in lib/theme.ts, started by the lamp in components/lamp-toggle.tsx). */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation: none;
@@ -81,14 +81,13 @@ body {
 .input-group {
   position: relative;
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   width: 100%;
-  min-height: 58px;
   border: 1px solid var(--line);
-  border-radius: 29px;
+  border-radius: 20px;
   background: var(--raise);
   text-align: left;
-  box-shadow: 0 1px 2px rgb(16 17 19 / 0.04), 0 10px 30px -18px rgb(16 17 19 / 0.2);
+  box-shadow: 0 1px 2px rgb(16 17 19 / 0.04), 0 12px 32px -20px rgb(16 17 19 / 0.22);
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 /* Focus shows on the whole composer, not as a box around the text inside it. */
@@ -98,6 +97,31 @@ body {
 }
 [data-slot="input-group-control"]:focus-visible {
   outline: none;
+}
+
+/* ---------- The koi pond's mask (components/pond-background.tsx) ----------
+   Full strength at the sides of the window, nearly gone behind the 720px reading column, so text
+   sits on a clean page. On the empty agent page (data-pond="open" on <html>, set by components/chat.tsx)
+   the middle opens up and the whole pond shows; it fades back once the first question is asked. */
+@property --pond-mid {
+  syntax: "<number>";
+  inherits: false;
+  initial-value: 0.07;
+}
+.pond {
+  --pond-mid: 0.07;
+  --pond-fade: linear-gradient(to right, black, black calc(50% - 560px), rgb(0 0 0 / var(--pond-mid)) calc(50% - 370px), rgb(0 0 0 / var(--pond-mid)) calc(50% + 370px), black calc(50% + 560px), black);
+  mask-image: var(--pond-fade);
+  -webkit-mask-image: var(--pond-fade);
+  transition: --pond-mid 1.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-pond="open"] .pond {
+  --pond-mid: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pond {
+    transition: none;
+  }
 }
 
 /* ---------- Entrances on the agent page: the empty state on load, and each new answer ---------- */

@@ -21,6 +21,12 @@ export async function generateMetadata(): Promise<Metadata> {
 // Runs before first paint so a saved dark theme does not flash light.
 const themeScript = `try{var t=localStorage.getItem("theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}`;
 
+// The header's link to the agent page carries the first name from the profile ("Ask Hiruna").
+async function ProfileHeader() {
+  const profile = await getProfile();
+  return <Header name={profile.name} />;
+}
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
@@ -39,7 +45,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
         {/* The header reads the current path, which is only known per request on dynamic routes. */}
         <Suspense fallback={<div className="h-[60px]" />}>
-          <Header />
+          <ProfileHeader />
         </Suspense>
         {children}
       </body>
