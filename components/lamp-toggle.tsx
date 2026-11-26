@@ -2,13 +2,17 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
+import { bayer8, dotSize, hexToRgb } from "@/lib/dither";
 import { playSwitch } from "@/lib/switch-sound";
 import { isDarkTheme, subscribeTheme, switchTheme } from "@/lib/theme";
 
 /*
  * The theme switch: a small pendant lamp hanging from the top of the window, with a pull cord.
  *
- * - Light theme: the lamp is on (dark shade, warm bulb, a soft glow). Dark theme: it is off (white shade).
+ * - It is drawn like the koi pond behind the site: ordered-dithered 2px dots on the pond's own grid
+ *   (lib/dither.ts), in the pond's blue ink, with amber dots for the bulb and its glow.
+ * - Light theme: the lamp is on (dense, shaded shade, a bright bulb and a halo of amber dots).
+ *   Dark theme: it is off (a light shade with a dotted outline, no glow).
  * - Click the shade, or tap the cord: the cord is yanked down and springs back, the lamp switches at once
  *   and the page follows with the circular reveal, spreading out from the bulb.
  * - Drag the cord: it goes taut and gives a little, with growing resistance, like a real pull cord, and
@@ -18,13 +22,26 @@ import { isDarkTheme, subscribeTheme, switchTheme } from "@/lib/theme";
  * - Each switch plays a short click, and letting go of the cord a softer one (lib/switch-sound.ts).
  *
  * The cord is a short rope (Verlet integration with distance constraints) and the lamp a damped
- * pendulum. The loop only runs while something moves, and writes straight to the SVG, not through React.
- * Keyboard users get the same switch through the button over the shade.
+ * pendulum. The loop only runs while something moves. Each frame works out how much ink every dot cell
+ * near the lamp gets and dithers it onto a small canvas (paintLamp), not through React. Invisible SVG
+ * shapes over the cord and bead take the pointer; keyboard users get the switch through the button
+ * over the shade.
  */
 
 // Geometry in px, in the lamp's own frame: the pivot (top of the window) is the origin, y points down.
-const BULB_Y = 31; // where the pull cord is tied, under the bulb
-const SEGMENTS = 9;
+// The lamp is a little larger than a plain icon so it still reads at 2px dots.
+const CAP_TOP = 12.5;
+const CAP_BOTTOM = 18.5;
+const CAP_HALF = 3.2;
+const RIM_Y = 33; // the shade's open bottom edge
+const SHADE_RX = 15.6;
+const SHADE_RY = 14;
+const BULB_CY = 33.2;
+const BULB_R = 5.5;
+const GLOW_R = 36;
+const BEAD_R = 3.6;
+const BULB_Y = 39; // where the pull cord is tied, under the bulb
+const SEGMENTS = 8;
 const SEG = 4; // rest length of one cord segment
 const CORD = SEGMENTS * SEG;
 const STUB = 3; // segments left hanging after a snap
@@ -37,6 +54,9 @@ const REGROW_AFTER = 6000;
 const REGROW_FOR = 450;
 const STEP = 1 / 60;
 const GRAVITY = 1500;
+const REACH = 120; // the canvas covers this far either side of the pivot
+const DEPTH = 260; // and this far down
+const AMBER: [number, number, number] = [242, 163, 58];
 
 type Pt = { x: number; y: number; px: number; py: number };
 const point = (x: number, y: number): Pt => ({ x, y, px: x, py: y });
@@ -110,6 +130,134 @@ function flickerLevel(elapsed: number) {
   return level;
 }
 
+function inkColour(): [number, number, number] {
+  return hexToRgb(getComputedStyle(document.documentElement).getPropertyValue("--koi"), [26, 66, 226]);
+}
+
+type Layout = {
+  ctx: CanvasRenderingContext2D;
+  image: ImageData;
+  cols: number;
+  rows: number;
+  dot: number; // one dot in CSS px
+  cellX: number; // the canvas's first column, counted in dots from the window's left edge
+  originX: number; // the canvas's left edge, in CSS px from the pivot
+  ink: [number, number, number];
+};
+
+/**
+ * Size and place the canvas so its dots fall on the pond's grid: it starts on a whole dot from the
+ * window's left edge, at the top of the window, one canvas pixel per dot, scaled up without smoothing.
+ * It covers the lamp's reach around the pivot but never runs past the window's edges.
+ */
+function placeCanvas(canvas: HTMLCanvasElement | null, pivotEl: SVGSVGElement | null): Layout | null {
+  const ctx = canvas?.getContext("2d");
+  if (!canvas || !pivotEl || !ctx) return null;
+  const { css: dot } = dotSize();
+  const pivot = pivotEl.getBoundingClientRect();
+  const slot = canvas.parentElement?.getBoundingClientRect();
+  if (!slot) return null;
+  const first = Math.max(0, Math.floor((pivot.left - REACH) / dot));
+  const end = Math.min(Math.floor(document.documentElement.clientWidth / dot), Math.ceil((pivot.left + REACH) / dot));
+  const cols = Math.max(1, end - first);
+  const rows = Math.ceil(DEPTH / dot);
+  canvas.width = cols;
+  canvas.height = rows;
+  canvas.style.width = `${cols * dot}px`;
+  canvas.style.height = `${rows * dot}px`;
+  canvas.style.left = `${first * dot - slot.left}px`;
+  // The lamp hangs from the centre of a dot, so the cords are exactly one dot wide.
+  const centre = (Math.floor(pivot.left / dot) + 0.5) * dot;
+  return { ctx, image: ctx.createImageData(cols, rows), cols, rows, dot, cellX: first, originX: first * dot - centre, ink: inkColour() };
+}
+
+/** Distance from (x, y) to the segment a-b. */
+function segmentDistance(x: number, y: number, ax: number, ay: number, bx: number, by: number) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const t = Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy || 1)));
+  return Math.hypot(x - ax - t * dx, y - ay - t * dy);
+}
+
+function polylineDistance(x: number, y: number, pts: Pt[]) {
+  let best = Infinity;
+  for (let i = 0; i < pts.length - 1; i++) best = Math.min(best, segmentDistance(x, y, pts[i].x, pts[i].y, pts[i + 1].x, pts[i + 1].y));
+  return best;
+}
+
+/**
+ * Ink (blue) and glow (amber) amounts, 0 to 1, at a point in the lamp's own frame. Lit, the shade is
+ * dense with a lighter highlight band and the bulb is a bright gap; off, the shade is light with a
+ * dark outline and the bulb a mid grey.
+ */
+function lampField(x: number, y: number, lit: boolean, glowing: boolean, line: number): [number, number] {
+  let ink = 0;
+  if (Math.abs(x) < line && y < CAP_TOP) ink = 1; // the hanging cord
+  if (Math.abs(x) < CAP_HALF && y >= CAP_TOP && y < CAP_BOTTOM) ink = lit ? 0.95 : 0.75;
+  // A superellipse rather than an ellipse, so the dome keeps round shoulders at this dot size.
+  const e = Math.abs(x / SHADE_RX) ** 2.6 + Math.abs((y - RIM_Y) / SHADE_RY) ** 2.6;
+  if (e <= 1 && y <= RIM_Y) {
+    const edge = e > 0.72;
+    const highlight = Math.exp(-(((x + SHADE_RX * 0.38) / (SHADE_RX * 0.22)) ** 2)) * (y < RIM_Y - 3 ? 1 : 0);
+    ink = Math.max(
+      ink,
+      lit ? Math.min(1, 0.9 - highlight * 0.3 + (edge ? 0.1 : 0)) : edge ? 0.9 : 0.14 + (0.18 * Math.abs(x)) / SHADE_RX - highlight * 0.1,
+    );
+  }
+  if (Math.abs(y - RIM_Y) < 1.1 && Math.abs(x) < SHADE_RX + 0.5) ink = 1; // the rim
+  if (y > RIM_Y && Math.hypot(x, y - BULB_CY) < BULB_R) return glowing ? [0, 1] : [Math.max(ink, 0.55), 0];
+  return [ink, 0];
+}
+
+/** Work out every dot's ink near the lamp, dither it, and put it on the canvas. */
+function paintLamp(l: Layout, s: Sim, now: number) {
+  const { cols, rows, dot, image } = l;
+  const data = image.data;
+  data.fill(0);
+
+  const flicker = flickerLevel(now - s.flickerStart);
+  const glow = flicker >= 0 ? flicker : s.lit ? 1 : 0;
+  const cos = Math.cos(s.theta);
+  const sin = Math.sin(s.theta);
+  const bulb = { x: -BULB_CY * sin, y: BULB_CY * cos };
+  const showBead = !s.snapped || s.regrowStart > 0;
+  const bead = s.pts[s.pts.length - 1];
+  const looseFade = s.falling ? Math.max(0, 1 - (now - s.fallingSince) / 900) : 0;
+  const line = dot * 0.55; // how close a dot must be to a cord to be inked: one dot wide, without gaps
+
+  for (let j = 0; j < rows; j++) {
+    const y = (j + 0.5) * dot;
+    for (let i = 0; i < cols; i++) {
+      const x = l.originX + (i + 0.5) * dot;
+      let ink = 0;
+      let warm = 0;
+      if (y < RIM_Y + BULB_R + 6 && Math.abs(x) < SHADE_RX + 14) {
+        // Into the lamp's own frame, which swings about the pivot.
+        [ink, warm] = lampField(x * cos + y * sin, -x * sin + y * cos, s.lit, glow > 0.5, line);
+      }
+      if (ink < 1 && polylineDistance(x, y, s.pts) < line) ink = 1;
+      if (showBead && Math.hypot(x - bead.x, y - bead.y) < BEAD_R) ink = 1;
+      if (s.falling && looseFade > 0) {
+        const end = s.falling[s.falling.length - 1];
+        if (polylineDistance(x, y, s.falling) < line || Math.hypot(x - end.x, y - end.y) < BEAD_R) ink = Math.max(ink, looseFade);
+      }
+      if (glow > 0 && ink < 0.05 && warm === 0) {
+        const d = Math.hypot(x - bulb.x, y - bulb.y);
+        if (d < GLOW_R) warm = glow * 0.36 * (1 - d / GLOW_R) ** 1.8;
+      }
+      const threshold = bayer8(l.cellX + i, j);
+      const colour = ink > threshold ? l.ink : warm > threshold ? AMBER : null;
+      if (!colour) continue;
+      const k = (j * cols + i) * 4;
+      data[k] = colour[0];
+      data[k + 1] = colour[1];
+      data[k + 2] = colour[2];
+      data[k + 3] = 255;
+    }
+  }
+  l.ctx.putImageData(image, 0, 0);
+}
+
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
@@ -122,14 +270,10 @@ export function LampToggle() {
   const [note, setNote] = useState(0);
 
   const svgRef = useRef<SVGSVGElement>(null);
-  const lampRef = useRef<SVGGElement>(null);
-  const glowRef = useRef<SVGCircleElement>(null);
-  const cordRef = useRef<SVGPathElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const cordHitRef = useRef<SVGPathElement>(null);
-  const beadRef = useRef<SVGCircleElement>(null);
   const beadHitRef = useRef<SVGCircleElement>(null);
-  const looseRef = useRef<SVGPathElement>(null);
-  const looseBeadRef = useRef<SVGCircleElement>(null);
+  const layout = useRef<Layout | null>(null);
 
   const sim = useRef<Sim>({
     theta: 0,
@@ -157,12 +301,24 @@ export function LampToggle() {
   const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const timers = useRef<number[]>([]);
 
-  // The loop reads the lamp's state from the ref, so it never waits for a render.
+  // The loop reads the lamp's state from the ref, so it never waits for a render. A theme change
+  // repaints in the new ink.
   useEffect(() => {
     sim.current.lit = lit;
-    const glow = glowRef.current;
-    if (glow && performance.now() - sim.current.flickerStart > 700) glow.style.opacity = lit ? "1" : "0";
-  }, [lit]);
+    if (layout.current) layout.current.ink = inkColour();
+    repaint();
+  }, [lit, dark]);
+
+  // Line the canvas up with the pond's dot grid, now and whenever the window changes size.
+  useEffect(() => {
+    const place = () => {
+      layout.current = placeCanvas(canvasRef.current, svgRef.current);
+      repaint();
+    };
+    place();
+    window.addEventListener("resize", place);
+    return () => window.removeEventListener("resize", place);
+  }, []);
 
   useEffect(() => {
     const scheduled = timers.current;
@@ -172,38 +328,22 @@ export function LampToggle() {
     };
   }, []);
 
+  function repaint() {
+    if (layout.current) paintLamp(layout.current, sim.current, performance.now());
+  }
+
   function draw() {
     const s = sim.current;
-    lampRef.current?.setAttribute("transform", `rotate(${((s.theta * 180) / Math.PI).toFixed(3)})`);
-    const d = cordPath(s.pts);
-    cordRef.current?.setAttribute("d", d);
-    cordHitRef.current?.setAttribute("d", d);
+    repaint();
+    // Move the invisible grab targets with the cord.
+    cordHitRef.current?.setAttribute("d", cordPath(s.pts));
     const bead = s.pts[s.pts.length - 1];
-    const showBead = !s.snapped || s.regrowStart > 0;
-    for (const el of [beadRef.current, beadHitRef.current]) {
-      if (!el) continue;
+    const el = beadHitRef.current;
+    if (el) {
       el.setAttribute("cx", bead.x.toFixed(2));
       el.setAttribute("cy", bead.y.toFixed(2));
-      el.style.display = showBead ? "" : "none";
+      el.style.display = !s.snapped || s.regrowStart > 0 ? "" : "none";
     }
-    const loose = s.falling;
-    if (looseRef.current && looseBeadRef.current) {
-      looseRef.current.style.display = loose ? "" : "none";
-      looseBeadRef.current.style.display = loose ? "" : "none";
-      if (loose) {
-        looseRef.current.setAttribute("d", cordPath(loose));
-        const end = loose[loose.length - 1];
-        looseBeadRef.current.setAttribute("cx", end.x.toFixed(2));
-        looseBeadRef.current.setAttribute("cy", end.y.toFixed(2));
-        const fade = String(Math.max(0, 1 - (performance.now() - s.fallingSince) / 900));
-        looseRef.current.style.opacity = fade;
-        looseBeadRef.current.style.opacity = fade;
-      }
-    }
-    const glow = glowRef.current;
-    const flicker = flickerLevel(performance.now() - s.flickerStart);
-    if (glow && flicker >= 0) glow.style.opacity = String(flicker);
-    else if (glow && performance.now() - s.flickerStart < 800) glow.style.opacity = s.lit ? "1" : "0";
   }
 
   function snap() {
@@ -516,6 +656,13 @@ export function LampToggle() {
 
   return (
     <div className="relative w-8 shrink-0 self-stretch">
+      {/* The lamp itself, dithered dots on a canvas lined up with the pond (paintLamp). */}
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0"
+        style={{ imageRendering: "pixelated", width: 0, height: 0 }}
+      />
       <svg
         ref={svgRef}
         width="1"
@@ -524,60 +671,7 @@ export function LampToggle() {
         aria-hidden="true"
         className="pointer-events-none absolute left-1/2 top-0"
       >
-        <defs>
-          <radialGradient id="lamp-glow">
-            <stop offset="0" stopColor="#ffc56b" stopOpacity="0.55" />
-            <stop offset="0.45" stopColor="#ffb44d" stopOpacity="0.18" />
-            <stop offset="1" stopColor="#ffb44d" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id="lamp-shade-on" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#1b1c1f" />
-            <stop offset="0.38" stopColor="#4a4d53" />
-            <stop offset="0.62" stopColor="#2c2e32" />
-            <stop offset="1" stopColor="#141517" />
-          </linearGradient>
-          <linearGradient id="lamp-shade-off" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0" stopColor="#b9bdc4" />
-            <stop offset="0.38" stopColor="#ffffff" />
-            <stop offset="0.66" stopColor="#e6e8eb" />
-            <stop offset="1" stopColor="#a9adb4" />
-          </linearGradient>
-          <radialGradient id="lamp-bulb-on" cx="0.5" cy="0.2" r="0.8">
-            <stop offset="0" stopColor="#fffaf0" />
-            <stop offset="0.5" stopColor="#ffd98f" />
-            <stop offset="1" stopColor="#f2a33a" />
-          </radialGradient>
-          <radialGradient id="lamp-bulb-off" cx="0.4" cy="0.3" r="0.8">
-            <stop offset="0" stopColor="#9a9ea6" />
-            <stop offset="1" stopColor="#4b4e54" />
-          </radialGradient>
-          <radialGradient id="lamp-bead" cx="0.35" cy="0.3" r="0.75">
-            <stop offset="0" stopColor="#ffd796" />
-            <stop offset="0.55" stopColor="#d9953f" />
-            <stop offset="1" stopColor="#9c5f1c" />
-          </radialGradient>
-        </defs>
-
-        <g ref={lampRef}>
-          <circle ref={glowRef} cx="0" cy="26" r="40" fill="url(#lamp-glow)" style={{ opacity: lit ? 1 : 0, transition: "opacity 0.15s" }} />
-          {/* Hanging cord and the cap the shade hangs from. */}
-          <line x1="0" y1="-2" x2="0" y2="12" stroke={lit ? "#4a4d53" : "#9a9ea6"} strokeWidth="1.3" />
-          <rect x="-2.6" y="10.5" width="5.2" height="4.5" rx="1" fill={lit ? "#2a2c30" : "#d4d7dc"} />
-          {/* The bulb, peeking out under the shade. */}
-          <circle cx="0" cy="26.6" r="4.4" fill={lit ? "url(#lamp-bulb-on)" : "url(#lamp-bulb-off)"} />
-          {/* The dome shade, its rim and a highlight. */}
-          <path d="M-12.5 26.5C-12.5 19.2-7.6 14.2 0 14.2S12.5 19.2 12.5 26.5Z" fill={lit ? "url(#lamp-shade-on)" : "url(#lamp-shade-off)"} />
-          <path d="M-12.9 26.4H12.9" stroke={lit ? "#ffcf80" : "#8d9198"} strokeOpacity={lit ? 0.9 : 0.7} strokeWidth="1.1" strokeLinecap="round" />
-          <path d="M-7.6 22.4C-7.2 19.4-5.2 17.1-2.4 16.2" fill="none" stroke="#fff" strokeOpacity={lit ? 0.22 : 0.85} strokeWidth="1.1" strokeLinecap="round" />
-        </g>
-
-        {/* The loose end of a snapped cord, falling away. */}
-        <path ref={looseRef} fill="none" stroke="#c88836" strokeWidth="1.3" strokeLinecap="round" style={{ display: "none" }} />
-        <circle ref={looseBeadRef} r="3.3" fill="url(#lamp-bead)" style={{ display: "none" }} />
-
-        {/* The pull cord and its bead, with wider invisible copies to make them easy to grab. */}
-        <path ref={cordRef} d={RESTING_PATH} fill="none" stroke="#c88836" strokeWidth="1.3" strokeLinecap="round" />
-        <circle ref={beadRef} cx="0" cy={BULB_Y + CORD} r="3.3" fill="url(#lamp-bead)" />
+        {/* Invisible grab targets over the cord and its bead, wider than they look. */}
         <path
           ref={cordHitRef}
           d={RESTING_PATH}
@@ -611,7 +705,7 @@ export function LampToggle() {
         onClick={pull}
         aria-label={label}
         title={label}
-        className="absolute left-1/2 top-[8px] h-[24px] w-[30px] -translate-x-1/2 cursor-pointer rounded-full"
+        className="absolute left-1/2 top-[11px] h-[26px] w-[38px] -translate-x-1/2 cursor-pointer rounded-full"
       />
 
       {note > 0 &&

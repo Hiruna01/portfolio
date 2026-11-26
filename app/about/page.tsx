@@ -22,24 +22,24 @@ export default async function AboutPage() {
         <div className="mb-[30px]">
           <div className="min-w-0">
             {/* The canvas keeps a 14px side margin for the selection frame; -ml-3.5 lines the letters up with the tagline. */}
-            {/* font-mono on the heading: the canvas reads its font from the computed style, so it gets Geist Mono as loaded by next/font. */}
-            <h1 className="-ml-3.5 h-[84px] font-mono text-strong sm:h-[96px]">
+            {/* The canvas reads its font from the computed style, so it gets Geist (sans) as loaded by next/font. */}
+            <h1 className="-ml-3.5 h-[84px] font-sans text-strong sm:h-[96px]">
               <TechText
                 text={profile.name}
                 align="left"
-                fontWeight={500}
                 fontSize={56}
-                letterSpacing={-0.02}
-                strokeWidth={1}
+                // React Bits' "Vector" settings, with the "type" intro: each letter appears as a dashed
+                // outline in the selection frame, then fills in.
+                fontWeight={600}
                 reveal="letter"
-                dashLength={2}
+                dashLength={4}
                 dashGap={2}
-                specks={32}
-                intro="assemble"
-                introDuration={2.2}
-                sweep={false}
-                guides={false}
+                specks={15}
+                intro="type"
+                introDuration={2}
                 clickKick
+                guides={false}
+                sweep={false}
               />
             </h1>
             <p className="-mt-2 font-mono text-[13.5px]">{profile.tagline}</p>

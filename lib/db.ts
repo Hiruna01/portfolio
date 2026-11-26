@@ -7,8 +7,10 @@ import { profile } from "@/content/profile";
 import { projects } from "@/content/projects";
 import { defaultAgentSettings } from "./schemas";
 
-// One small query interface over two Postgres drivers:
-//   - Neon (serverless HTTP) when DATABASE_URL is set. This is production.
+// One small query interface over three Postgres drivers:
+//   - Neon's serverless HTTP driver when DATABASE_URL points at Neon (*.neon.tech).
+//   - postgres.js for any other DATABASE_URL, such as Supabase. On Vercel, use Supabase's transaction
+//     pooler (port 6543); prepared statements are off because that pooler does not keep them.
 //   - PGlite, an embedded Postgres stored in .data/, for local development with no setup.
 // Tables are created and seeded from content/ the first time a database is used.
 
@@ -46,6 +48,11 @@ const SCHEMA = [
      action text NOT NULL,
      detail text NOT NULL DEFAULT ''
    )`,
+  // Row-level security with no policies: Supabase serves tables in the public schema through its
+  // Data API to anyone with the project's public key, so without this they could be read and changed
+  // from outside the site. The site connects as the database owner, which is not affected.
+  // Harmless on Neon and PGlite.
+  ...["items", "settings", "sessions", "attempts", "audit"].map((table) => `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`),
 ];
 
 async function prepare(driver: Driver): Promise<void> {
@@ -80,12 +87,34 @@ async function connect(): Promise<Driver> {
   const url = process.env.DATABASE_URL;
   let driver: Driver;
 
-  if (url) {
+  if (url && /\.neon\.tech$/i.test(new URL(url).hostname)) {
     const { neon } = await import("@neondatabase/serverless");
     const sql = neon(url);
     driver = { query: (text, params = []) => sql.query(text, params) as Promise<Row[]> };
+  } else if (url) {
+    const { default: postgres } = await import("postgres");
+    const local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(new URL(url).hostname);
+    const sql = postgres(url, {
+      prepare: false,
+      ssl: local ? false : "require",
+      max: 3,
+      idle_timeout: 20,
+      // This code already sends JSON as text (for $n::jsonb), as Neon and PGlite expect. postgres.js would
+      // encode that text a second time and store a JSON string instead of the object, so pass strings through.
+      types: {
+        json: {
+          to: 114,
+          from: [114, 3802],
+          serialize: (value: unknown) => (typeof value === "string" ? value : JSON.stringify(value)),
+          parse: (value: string) => JSON.parse(value),
+        },
+      },
+    });
+    driver = { query: async (text, params = []) => [...(await sql.unsafe(text, params as never[]))] as Row[] };
   } else {
-    if (process.env.VERCEL) throw new Error("DATABASE_URL is not set. Add your Neon connection string to the project's environment variables.");
+    if (process.env.VERCEL) {
+      throw new Error("DATABASE_URL is not set. Add your Postgres connection string (Supabase or Neon) to the project's environment variables.");
+    }
     const { PGlite } = await import("@electric-sql/pglite");
     const { mkdirSync } = await import("node:fs");
     mkdirSync(".data", { recursive: true });

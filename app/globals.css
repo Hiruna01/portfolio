@@ -124,6 +124,45 @@ body {
   }
 }
 
+/* ---------- The drawn-in heading on the agent page (components/drawn-heading.tsx) ----------
+   Each letter's outline is drawn as a vector stroke, a little after the one before it, then the
+   letter fills in and the stroke fades, leaving plain text at its normal weight. */
+.drawn-heading text {
+  font: inherit;
+  letter-spacing: inherit;
+}
+.drawn-heading tspan {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke: currentColor;
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  stroke-dasharray: 320;
+  stroke-dashoffset: 320;
+  animation:
+    heading-draw 1.3s cubic-bezier(0.65, 0, 0.35, 1) forwards,
+    heading-fill 0.7s ease-out forwards;
+  animation-delay: calc(var(--i, 0) * 70ms), calc(var(--i, 0) * 70ms + 0.85s);
+}
+@keyframes heading-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes heading-fill {
+  to {
+    fill-opacity: 1;
+    stroke-opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drawn-heading tspan {
+    animation: none;
+    fill-opacity: 1;
+    stroke: none;
+  }
+}
+
 /* ---------- Entrances on the agent page: the empty state on load, and each new answer ---------- */
 @keyframes rise {
   from {

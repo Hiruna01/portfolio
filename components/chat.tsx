@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { ChatEvent, Item, UiBlock } from "@/lib/types";
 import { ChatResults } from "./chat-blocks";
+import { DrawnHeading } from "./drawn-heading";
 import { Markdown } from "./markdown";
 import { MicButton } from "./mic-button";
 import { InputGroupButton } from "./ui/input-group";
@@ -197,9 +198,10 @@ export function Chat({ name, suggestions, enabled }: Props) {
     return (
       <main className="mx-auto flex min-h-[calc(100dvh-60px)] max-w-[720px] flex-col px-6">
         <div className="my-auto pb-[8vh] pt-8 text-center">
-          <h1 className="rise mb-9 text-[44px] font-medium leading-none tracking-[-0.045em] text-strong sm:text-[60px]" style={order(1)}>
-            Ask {name.split(" ")[0]}.
-          </h1>
+          <DrawnHeading
+            text={`Ask ${name.split(" ")[0]}.`}
+            className="mb-9 text-[44px] font-medium leading-none tracking-[-0.045em] text-strong sm:text-[60px]"
+          />
           <div className="rise relative z-10 mx-auto max-w-[580px]" style={order(2)}>
             {composer}
           </div>
