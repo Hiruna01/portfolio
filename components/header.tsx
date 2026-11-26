@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { Sparkles } from "lucide-react";
-import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { LampToggle } from "@/components/lamp-toggle";
 import { StarBorder } from "@/components/ui/star-border";
 
 const pages = [
@@ -19,7 +19,7 @@ function onScroll(callback: () => void) {
   return () => window.removeEventListener("scroll", callback);
 }
 
-export function Header() {
+export function Header({ name }: { name: string }) {
   const pathname = usePathname();
   const scrolled = useSyncExternalStore(onScroll, () => window.scrollY > 4, () => false);
   // On the agent page the header stays clear while the page is at the top, so the background
@@ -36,8 +36,9 @@ export function Header() {
         clear ? "bg-transparent" : "bg-bg/85 backdrop-blur-md"
       }`}
     >
-      <div className="mx-auto flex h-[60px] max-w-[720px] items-center justify-between gap-3 px-6">
-        <nav aria-label="Main" className="flex items-center gap-4 text-sm sm:gap-5">
+      <div className="mx-auto flex h-[60px] max-w-[720px] items-center justify-between gap-2 px-4 sm:gap-3 sm:px-6">
+        {/* On a phone the links get smaller and closer, and scroll sideways if they still don't fit. */}
+        <nav aria-label="Main" className="-my-2 flex min-w-0 items-center gap-[9px] overflow-x-auto whitespace-nowrap py-2 text-[13px] [scrollbar-width:none] sm:gap-5 sm:text-sm">
           <StarBorder
             as={Link}
             href="/"
@@ -51,17 +52,17 @@ export function Header() {
             backgroundColor="var(--raise)"
             textColor="var(--strong)"
             borderColor="var(--line)"
-            className="gap-1.5 px-3.5 py-[5px] text-[13.5px] tracking-[-0.005em] shadow-[0_1px_2px_rgb(0_0_0/0.05)]"
+            className="shrink-0 gap-1.5 px-2.5 py-[5px] text-[13px] tracking-[-0.005em] shadow-[0_1px_2px_rgb(0_0_0/0.05)] sm:px-3.5 sm:text-[13.5px]"
           >
-            <Sparkles className="size-3.5 text-soft" strokeWidth={1.75} aria-hidden="true" />
-            Agent
+            <Sparkles className="hidden size-3.5 text-soft sm:block" strokeWidth={1.75} aria-hidden="true" />
+            Ask {name.split(" ")[0]}
           </StarBorder>
           {pages.map((page) => (
             <Link
               key={page.href}
               href={page.href}
               aria-current={pathname === page.href ? "page" : undefined}
-              className={`underline-offset-[7px] transition-colors hover:text-strong ${
+              className={`shrink-0 underline-offset-[7px] transition-colors hover:text-strong ${
                 pathname === page.href ? "text-strong underline decoration-accent decoration-2" : ""
               }`}
             >
@@ -69,7 +70,7 @@ export function Header() {
             </Link>
           ))}
         </nav>
-        <AnimatedThemeToggler className="grid size-7 shrink-0 place-items-center hover:text-strong" />
+        <LampToggle />
       </div>
     </header>
   );

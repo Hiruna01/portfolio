@@ -91,9 +91,9 @@ export function MicButton({ value, onText, disabled }: Props) {
       aria-pressed={listening}
       aria-label={listening ? "Stop dictation" : "Dictate your question"}
       title={listening ? "Stop dictation" : "Dictate"}
-      className={listening ? "animate-pulse bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-accent hover:text-accent" : "text-strong"}
+      className={listening ? "animate-pulse bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-accent hover:text-accent" : "text-soft hover:text-strong"}
     >
-      <Mic className="size-[19px]" strokeWidth={1.6} aria-hidden="true" />
+      <Mic className="size-[17px]" strokeWidth={1.6} aria-hidden="true" />
     </InputGroupButton>
   );
 }

@@ -35,14 +35,14 @@ export function InputGroupAddon({
 }
 
 const BUTTON_VARIANT = {
-  // With nothing to send the filled button becomes an outlined ring, so it is quiet but never missing.
+  // With nothing to send the filled button turns into a quiet grey disc, so it is calm but never missing.
   default:
-    "bg-accent text-bg shadow-[0_1px_2px_rgb(16_17_19/0.2)] hover:opacity-85 disabled:bg-transparent disabled:text-soft disabled:opacity-100 disabled:shadow-[inset_0_0_0_1px_var(--line)]",
+    "bg-accent text-bg shadow-[0_1px_2px_rgb(16_17_19/0.2)] hover:opacity-85 disabled:bg-chip disabled:text-soft disabled:opacity-100 disabled:shadow-none",
   ghost: "text-body hover:bg-chip hover:text-strong disabled:opacity-50",
 };
 const BUTTON_SIZE = {
   sm: "h-8 gap-1.5 px-3 text-[13px]",
-  "icon-sm": "size-10",
+  "icon-sm": "size-[34px]",
 };
 
 export function InputGroupButton({
